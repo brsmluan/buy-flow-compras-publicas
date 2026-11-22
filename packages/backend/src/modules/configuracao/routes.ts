@@ -9,7 +9,7 @@ import { AppError } from '@/middleware/error';
 import { authorize, requirePermission, requireTenantAccess } from '@/middleware/auth';
 import {
   UuidParamSchema,
-} from '@buy-flow/shared/validators/index';
+} from '@buy-flow/shared/validators';
 
 export async function configRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());

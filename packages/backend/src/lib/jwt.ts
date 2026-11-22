@@ -4,7 +4,7 @@
 
 import { SignJWT, jwtVerify, JWTPayload } from 'jose';
 import { env } from '../config/index';
-import type { TokenPayload } from '@buy-flow/shared/types/index';
+import type { TokenPayload } from '@buy-flow/shared/types';
 
 const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET);
 const JWT_REFRESH_SECRET = new TextEncoder().encode(env.JWT_REFRESH_SECRET || env.JWT_SECRET + '-refresh-v2');

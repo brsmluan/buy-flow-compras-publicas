@@ -10,8 +10,9 @@ import { authorize, requirePermission, requireTenantAccess } from '@/middleware/
 import {
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index';
-import { ContractStatus, BiddingModality } from '@buy-flow/shared/types/index';
+  ContractStatusSchema,
+  BiddingModalitySchema,
+} from '@buy-flow/shared/validators';
 
 export async function contractRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());
@@ -88,7 +89,7 @@ export async function contractRoutes(app: FastifyInstance) {
       year: z.number().int().min(2020).max(2099),
       processNumber: z.string().max(100).optional(),
       biddingId: z.string().uuid().optional(),
-      modality: BiddingModality,
+      modality: BiddingModalitySchema,
       supplierId: z.string().uuid(),
       organId: z.string().uuid(),
       managerId: z.string().uuid(),
@@ -123,7 +124,7 @@ export async function contractRoutes(app: FastifyInstance) {
       year: z.number().int().min(2020).max(2099).optional(),
       processNumber: z.string().max(100).optional(),
       biddingId: z.string().uuid().optional(),
-      modality: BiddingModality.optional(),
+      modality: BiddingModalitySchema.optional(),
       supplierId: z.string().uuid().optional(),
       organId: z.string().uuid().optional(),
       managerId: z.string().uuid().optional(),
@@ -131,7 +132,7 @@ export async function contractRoutes(app: FastifyInstance) {
       totalValue: z.number().positive().optional(),
       startDate: z.string().date().optional(),
       endDate: z.string().date().optional(),
-      status: z.enum(['draft', 'pending_signature', 'active', 'suspended', 'expired', 'terminated', 'renewed']).optional(),
+      status: ContractStatusSchema.optional(),
     }).parse(request.body);
     const tenantId = request.user!.tenantId!;
 

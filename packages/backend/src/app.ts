@@ -3,7 +3,7 @@
 // =============================================================================
 
 import Fastify, { FastifyInstance } from 'fastify';
-import { env } from './config/index';
+import { env, isProd } from './config/index';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { authenticate, optionalAuthenticate } from './middleware/auth';
 import { prisma } from './lib/prisma';
@@ -63,17 +63,17 @@ async function buildApp(): Promise<FastifyInstance> {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
-  await app.register(import('@fastify/rate-limit'), {
+  const rateLimitPlugin = await import('@fastify/rate-limit');
+  await app.register(rateLimitPlugin.default, {
     max: env.RATE_LIMIT_MAX,
     timeWindow: env.RATE_LIMIT_WINDOW_MS,
     keyGenerator: (req) => req.ip,
-    errorMessage: 'Muitas requisições, tente novamente mais tarde',
   });
 
   await app.register(import('@fastify/cookie'), {
     secret: env.JWT_SECRET,
     hook: 'onRequest',
-    parseOptions: { httpOnly: true, secure: env.isProd, sameSite: 'lax' },
+    parseOptions: { httpOnly: true, secure: isProd, sameSite: 'lax' },
   });
 
   await app.register(import('@fastify/sensible'));

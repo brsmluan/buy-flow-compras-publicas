@@ -10,8 +10,8 @@ import { authorize, requirePermission, requireTenantAccess } from '@/middleware/
 import {
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index';
-import { OrganType } from '@buy-flow/shared/types/index';
+  OrganTypeSchema,
+} from '@buy-flow/shared/validators';
 
 export async function organRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());
@@ -83,7 +83,7 @@ export async function organRoutes(app: FastifyInstance) {
       code: z.string().max(20).optional(),
       name: z.string().min(2).max(200),
       acronym: z.string().max(10).optional(),
-      type: OrganType,
+      type: OrganTypeSchema,
       parentId: z.string().uuid().optional(),
       budgetCode: z.string().max(50).optional(),
       managerId: z.string().uuid().optional(),
@@ -129,7 +129,7 @@ export async function organRoutes(app: FastifyInstance) {
       code: z.string().max(20).optional(),
       name: z.string().min(2).max(200).optional(),
       acronym: z.string().max(10).optional(),
-      type: OrganType.optional(),
+      type: OrganTypeSchema.optional(),
       parentId: z.string().uuid().nullable().optional(),
       budgetCode: z.string().max(50).optional(),
       managerId: z.string().uuid().nullable().optional(),

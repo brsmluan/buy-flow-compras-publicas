@@ -4,8 +4,8 @@
 
 import type { FastifyError, FastifyRequest, FastifyReply } from 'fastify';
 import { ZodError } from 'zod';
-import { Prisma } from '@prisma/client';
-import { env } from '../config/index';
+import { PrismaClientKnownRequestError, PrismaClientValidationError } from '@prisma/client/runtime/library';
+import { env, isDev } from '../config/index';
 
 export class AppError extends Error {
   constructor(
@@ -57,7 +57,7 @@ export function errorHandler(
 
   // Zod validation errors
   if (error instanceof ZodError) {
-    return reply.code(400).send({
+    reply.code(400).send({
       success: false,
       error: {
         code: 'VALIDATION_ERROR',
@@ -69,14 +69,15 @@ export function errorHandler(
         })),
       },
     });
+    return;
   }
 
   // Prisma errors
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+  if (error instanceof PrismaClientKnownRequestError) {
     switch (error.code) {
       case 'P2002': {
-        const target = (error.meta?.target as string[])?.join(', ') || 'campo';
-        return reply.code(409).send({
+        const target = ((error as any).meta?.target as string[])?.join(', ') || 'campo';
+        reply.code(409).send({
           success: false,
           error: {
             code: 'UNIQUE_CONSTRAINT',
@@ -84,48 +85,53 @@ export function errorHandler(
             details: { field: target },
           },
         });
+        return;
       }
       case 'P2003':
-        return reply.code(400).send({
+        reply.code(400).send({
           success: false,
           error: {
             code: 'FOREIGN_KEY_CONSTRAINT',
             message: 'Referência inválida: registro relacionado não encontrado',
           },
         });
+        return;
       case 'P2025':
-        return reply.code(404).send({
+        reply.code(404).send({
           success: false,
           error: {
             code: 'NOT_FOUND',
             message: 'Registro não encontrado',
           },
         });
+        return;
       default:
-        return reply.code(500).send({
+        reply.code(500).send({
           success: false,
           error: {
             code: 'DATABASE_ERROR',
             message: 'Erro no banco de dados',
-            details: env.isDev ? { prismaCode: error.code } : undefined,
+            details: isDev ? { prismaCode: error.code } : undefined,
           },
         });
+        return;
     }
   }
 
-  if (error instanceof Prisma.PrismaClientValidationError) {
-    return reply.code(400).send({
+  if (error instanceof PrismaClientValidationError) {
+    reply.code(400).send({
       success: false,
       error: {
         code: 'VALIDATION_ERROR',
         message: 'Dados inválidos para operação no banco',
       },
     });
+    return;
   }
 
   // AppError (nossos erros controlados)
   if (error instanceof AppError) {
-    return reply.code(error.statusCode).send({
+    reply.code(error.statusCode).send({
       success: false,
       error: {
         code: error.code,
@@ -133,11 +139,12 @@ export function errorHandler(
         details: error.details,
       },
     });
+    return;
   }
 
   // Fastify validation errors
   if (error.validation) {
-    return reply.code(400).send({
+    reply.code(400).send({
       success: false,
       error: {
         code: 'VALIDATION_ERROR',
@@ -148,18 +155,19 @@ export function errorHandler(
         })),
       },
     });
+    return;
   }
 
   // Erro genérico não tratado
   const statusCode = error.statusCode || 500;
-  const message = env.isDev ? error.message : 'Erro interno do servidor';
+  const message = isDev ? error.message : 'Erro interno do servidor';
 
-  return reply.code(statusCode).send({
+  reply.code(statusCode).send({
     success: false,
     error: {
       code: 'INTERNAL_ERROR',
       message,
-      details: env.isDev ? { stack: error.stack } : undefined,
+      details: isDev ? { stack: error.stack } : undefined,
     },
   });
 }
@@ -169,7 +177,7 @@ export function notFoundHandler(
   request: FastifyRequest,
   reply: FastifyReply
 ): void {
-  return reply.code(404).send({
+  reply.code(404).send({
     success: false,
     error: {
       code: 'NOT_FOUND',

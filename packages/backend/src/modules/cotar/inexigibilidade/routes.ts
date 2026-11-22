@@ -10,7 +10,7 @@ import { authorize, requirePermission, requireTenantAccess } from '@/middleware/
 import {
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index';
+} from '@buy-flow/shared/validators';
 
 const InexigibilidadeSubTypeSchema = z.enum([
   'unico_fornecedor', 'profissional_especializado', 'exclusividade', 'patente'

@@ -15,8 +15,8 @@ import {
   UpdateTenantSchema,
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index';
-import { ROLE_DEFAULT_PERMISSIONS } from '@buy-flow/shared/constants/index';
+} from '@buy-flow/shared/validators';
+import { ROLE_DEFAULT_PERMISSIONS } from '@buy-flow/shared/constants';
 
 export async function tenantRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authorize('platform_owner', 'platform_admin'));
@@ -237,8 +237,8 @@ export async function tenantRoutes(app: FastifyInstance) {
         purchaseOrders: purchaseOrdersCount,
         suppliers: suppliersCount,
         totalContractValue: totalContractValue._sum.totalValue || 0,
-        contractsByStatus: contractsByStatus.reduce((acc, c) => ({ ...acc, [c.status]: c._count }), {}),
-        biddingsByModality: biddingsByModality.reduce((acc, b) => ({ ...acc, [b.modality]: b._count }), {}),
+        contractsByStatus: contractsByStatus.reduce((acc: Record<string, number>, c: { status: string; _count: number }) => ({ ...acc, [c.status]: c._count }), {}),
+        biddingsByModality: biddingsByModality.reduce((acc: Record<string, number>, b: { modality: string; _count: number }) => ({ ...acc, [b.modality]: b._count }), {}),
       },
     };
   });

@@ -13,11 +13,11 @@ export async function getRedisClient(): Promise<RedisClientType> {
   redisClient = createClient({
     url: env.REDIS_URL,
     socket: {
-      reconnectStrategy: (retries) => Math.min(retries * 100, 3000),
+      reconnectStrategy: (retries: number) => Math.min(retries * 100, 3000),
     },
   });
 
-  redisClient.on('error', (err) => {
+  redisClient.on('error', (err: Error) => {
     console.error('❌ Redis Client Error:', err);
   });
 

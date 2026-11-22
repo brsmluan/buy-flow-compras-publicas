@@ -31,6 +31,17 @@ import {
   OrganSchema,
   AuditLogSchema,
   PaginationSchema,
+  // Zod Schemas for enums (used as runtime validators)
+  SupplierTypeSchema,
+  SupplierStatusSchema,
+  OrganTypeSchema,
+  BiddingModalitySchema,
+  BiddingStatusSchema,
+  ContractStatusSchema,
+  PurchaseOrderStatusSchema,
+  DFDStatusSchema,
+  ETPStatusSchema as ETPStatusSchema_,
+  RiskLevelSchema,
   type Login,
   type CreateUser,
 } from '../types/index.js';
@@ -522,11 +533,17 @@ export type VerifyTwoFactor = z.infer<typeof VerifyTwoFactorSchema>;
 export const ListQuerySchema = PaginationSchema.extend({
   search: z.string().max(200).optional(),
   status: z.string().optional(),
+  type: z.string().optional(),
+  categoryId: UUIDSchema.optional(),
+  contractId: UUIDSchema.optional(),
+  isActive: z.string().optional(),
+  year: z.number().int().optional(),
   startDate: DateSchema.optional(),
   endDate: DateSchema.optional(),
   organId: UUIDSchema.optional(),
   supplierId: UUIDSchema.optional(),
   modality: z.string().optional(),
+  role: z.string().optional(),
 });
 export type ListQuery = z.infer<typeof ListQuerySchema>;
 
@@ -831,4 +848,26 @@ export const PaySchema = z.object({
 export type Pay = z.infer<typeof PaySchema>;
 
 // Re-export commonly used types and schemas from types
-export { LoginSchema, type Login, CreateUserSchema, type CreateUser } from '../types/index.js';
+export {
+  LoginSchema,
+  type Login,
+  CreateUserSchema,
+  type CreateUser,
+  CreateTenantSchema,
+  UpdateTenantSchema,
+  UpdateUserSchema,
+} from '../types/index.js';
+
+// Re-export Zod enum schemas for runtime validation in routes
+export {
+  SupplierTypeSchema,
+  SupplierStatusSchema,
+  OrganTypeSchema,
+  BiddingModalitySchema,
+  BiddingStatusSchema,
+  ContractStatusSchema,
+  PurchaseOrderStatusSchema,
+  DFDStatusSchema,
+  ETPStatusSchema,
+  RiskLevelSchema,
+} from '../types/index.js';

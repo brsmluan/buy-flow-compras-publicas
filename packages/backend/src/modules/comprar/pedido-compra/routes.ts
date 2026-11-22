@@ -10,8 +10,8 @@ import { authorize, requirePermission, requireTenantAccess } from '@/middleware/
 import {
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index';
-import { PurchaseOrderStatus } from '@buy-flow/shared/types/index';
+  PurchaseOrderStatusSchema,
+} from '@buy-flow/shared/validators';
 
 export async function purchaseOrderRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());
@@ -105,7 +105,7 @@ export async function purchaseOrderRoutes(app: FastifyInstance) {
         ...body,
         tenantId,
         requesterId: request.user!.sub,
-        status: PurchaseOrderStatus.draft,
+        status: 'draft',
       },
       include: {
         contract: { select: { id: true, number: true, year: true } },
@@ -169,7 +169,7 @@ export async function purchaseOrderRoutes(app: FastifyInstance) {
     const updated = await prisma.purchaseOrder.update({
       where: { id },
       data: {
-        status: PurchaseOrderStatus.empenhado,
+        status: 'empenhado',
         empenhoNumber,
         empenhoDate: new Date(empenhoDate),
       },
@@ -207,13 +207,13 @@ export async function purchaseOrderRoutes(app: FastifyInstance) {
     });
 
     const allDelivered = updatedPedido!.items.every(
-      item => item.deliveredQuantity >= item.quantity
+      (item: { deliveredQuantity: number; quantity: number }) => item.deliveredQuantity >= item.quantity
     );
 
     const updated = await prisma.purchaseOrder.update({
       where: { id },
       data: {
-        status: allDelivered ? PurchaseOrderStatus.delivered : PurchaseOrderStatus.partial_delivered,
+        status: allDelivered ? 'delivered' : 'partial_delivered',
       },
     });
 
@@ -252,13 +252,13 @@ export async function purchaseOrderRoutes(app: FastifyInstance) {
     });
 
     const allInvoiced = updatedPedido!.items.every(
-      item => item.invoicedQuantity >= item.quantity
+      (item: { invoicedQuantity: number; quantity: number }) => item.invoicedQuantity >= item.quantity
     );
 
     const updated = await prisma.purchaseOrder.update({
       where: { id },
       data: {
-        status: allInvoiced ? PurchaseOrderStatus.invoiced : pedido.status,
+        status: allInvoiced ? 'invoiced' : pedido.status,
       },
     });
 
@@ -279,7 +279,7 @@ export async function purchaseOrderRoutes(app: FastifyInstance) {
 
     const updated = await prisma.purchaseOrder.update({
       where: { id },
-      data: { status: PurchaseOrderStatus.paid, paymentProofUrl, paidAt: new Date() },
+      data: { status: 'paid', paymentProofUrl, paidAt: new Date() },
     });
 
     return { success: true, data: { pedido: updated } };

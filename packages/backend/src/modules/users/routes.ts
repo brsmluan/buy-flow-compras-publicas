@@ -16,8 +16,8 @@ import {
   UuidParamSchema,
   ListQuerySchema,
   ChangePasswordSchema,
-} from '@buy-flow/shared/validators/index';
-import { ROLE_DEFAULT_PERMISSIONS } from '@buy-flow/shared/constants/index';
+} from '@buy-flow/shared/validators';
+import { ROLE_DEFAULT_PERMISSIONS } from '@buy-flow/shared/constants';
 
 export async function userRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());

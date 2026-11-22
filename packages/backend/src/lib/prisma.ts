@@ -3,20 +3,20 @@
 // =============================================================================
 
 import { PrismaClient } from '@prisma/client';
-import { env } from '../config/index';
+import { env, isDev } from '../config/index';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: env.isDev
+  log: isDev
     ? ['query', 'info', 'warn', 'error']
     : ['warn', 'error'],
   errorFormat: 'pretty',
 });
 
-if (env.isDev) globalForPrisma.prisma = prisma;
+if (isDev) globalForPrisma.prisma = prisma;
 
 // Modelos que suportam soft delete (têm campo deletedAt)
 const SOFT_DELETE_MODELS = [
@@ -45,7 +45,7 @@ const SOFT_DELETE_MODELS = [
 ];
 
 // Middleware para soft delete automático (apenas modelos com deletedAt)
-prisma.$use(async (params, next) => {
+prisma.$use(async (params: any, next: any) => {
   const model = params.model;
 
   // Verifica se o modelo suporta soft delete

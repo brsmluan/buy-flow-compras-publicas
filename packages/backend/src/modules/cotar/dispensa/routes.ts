@@ -10,7 +10,7 @@ import { authorize, requirePermission, requireTenantAccess } from '@/middleware/
 import {
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index';
+} from '@buy-flow/shared/validators';
 
 const DispensaSubTypeSchema = z.enum([
   'valor', 'emergencia', 'seguranca', 'doacao', 'concessao',

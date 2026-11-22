@@ -9,7 +9,7 @@ import crypto from 'crypto';
 import { authenticator } from 'otplib';
 import { prisma } from '@/lib/prisma';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../../lib/jwt';
-import { env } from '../../config/index';
+import { env, isProd } from '../../config/index';
 import { cache } from '@/lib/redis';
 import { AppError } from '@/middleware/error';
 import {
@@ -20,8 +20,8 @@ import {
   ChangePasswordSchema,
   SetupTwoFactorSchema,
   VerifyTwoFactorSchema,
-} from '@buy-flow/shared/validators/index';
-import type { UserRole } from '@buy-flow/shared/types/index';
+} from '@buy-flow/shared/validators';
+import type { UserRole } from '@buy-flow/shared/types';
 
 export async function authRoutes(app: FastifyInstance) {
   // ---------------------------------------------------------------------------
@@ -102,7 +102,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     reply.setCookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: env.isProd,
+      secure: isProd,
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60,
       path: '/',
@@ -130,7 +130,8 @@ export async function authRoutes(app: FastifyInstance) {
   // REFRESH TOKEN
   // ---------------------------------------------------------------------------
   app.post('/refresh', async (request, reply) => {
-    const refreshToken = request.cookies.refreshToken || request.body.refreshToken;
+    const body = request.body as { refreshToken?: string };
+    const refreshToken = request.cookies.refreshToken || body.refreshToken;
 
     if (!refreshToken) {
       throw AppError.unauthorized('MISSING_REFRESH_TOKEN', 'Refresh token não fornecido');
@@ -184,7 +185,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     reply.setCookie('refreshToken', newRefreshToken, {
       httpOnly: true,
-      secure: env.isProd,
+      secure: isProd,
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60,
       path: '/',
@@ -197,7 +198,8 @@ export async function authRoutes(app: FastifyInstance) {
   // LOGOUT
   // ---------------------------------------------------------------------------
   app.post('/logout', async (request, reply) => {
-    const refreshToken = request.cookies.refreshToken || request.body.refreshToken;
+    const body = request.body as { refreshToken?: string };
+    const refreshToken = request.cookies.refreshToken || body.refreshToken;
 
     if (refreshToken) {
       await prisma.refreshToken.updateMany({

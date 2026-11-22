@@ -10,7 +10,7 @@ import { authorize, requirePermission, requireTenantAccess } from '@/middleware/
 import {
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index';
+} from '@buy-flow/shared/validators';
 
 export async function cotacaoRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());
@@ -183,9 +183,9 @@ export async function cotacaoRoutes(app: FastifyInstance) {
 
     if (!cotacao) throw AppError.notFound('COTACAO_NOT_FOUND', 'Cotação não encontrada');
 
-    const comparison = cotacao.items.map(item => {
-      const proposalsForItem = cotacao.proposals.flatMap(p =>
-        p.items.filter(pi => pi.itemId === item.id).map(pi => ({
+    const comparison = cotacao.items.map((item: any) => {
+      const proposalsForItem = cotacao.proposals.flatMap((p: any) =>
+        p.items.filter((pi: any) => pi.itemId === item.id).map((pi: any) => ({
           supplierId: p.supplierId,
           supplierName: p.supplier?.name,
           unitPrice: pi.unitPrice,
@@ -198,7 +198,7 @@ export async function cotacaoRoutes(app: FastifyInstance) {
         item: item,
         proposals: proposalsForItem,
         bestPrice: proposalsForItem.length > 0 ?
-          proposalsForItem.reduce((best, current) => current.unitPrice < best.unitPrice ? current : best) : null,
+          proposalsForItem.reduce((best: any, current: any) => current.unitPrice < best.unitPrice ? current : best) : null,
       };
     });
 

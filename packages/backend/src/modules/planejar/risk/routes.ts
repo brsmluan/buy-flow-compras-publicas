@@ -11,8 +11,8 @@ import {
   CreateRiskAnalysisSchema,
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index';
-import { RiskLevel } from '@buy-flow/shared/types/index';
+} from '@buy-flow/shared/validators';
+import { RiskLevel } from '@buy-flow/shared/types';
 
 export async function riskRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());

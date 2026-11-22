@@ -7,12 +7,18 @@ import { verifyAccessToken, extractTokenFromHeader } from '../lib/jwt';
 import { prisma } from '../lib/prisma';
 import { cache } from '../lib/redis';
 import { env } from '../config/index';
-import type { UserRole, TokenPayload } from '@buy-flow/shared/types/index';
+import type { UserRole, UserStatus, TokenPayload } from '@buy-flow/shared/types';
+
+interface AuthUser extends Omit<TokenPayload, 'iat' | 'exp'> {
+  iat?: number;
+  exp?: number;
+  name?: string;
+}
 
 declare module 'fastify' {
   interface FastifyRequest {
-    user?: TokenPayload;
-    tenantId?: string;
+    user: AuthUser | undefined;
+    tenantId: string | null | undefined;
   }
 }
 
@@ -40,7 +46,7 @@ export async function authenticate(
 
   // Verificar se usuário ainda existe e está ativo
   const cacheKey = `user:${payload.sub}`;
-  let user = await cache.get<{ status: UserRole; tenantId: string | null }>(cacheKey);
+  let user = await cache.get<{ status: UserStatus; tenantId: string | null }>(cacheKey);
 
   if (!user) {
     user = await prisma.user.findUnique({
@@ -54,6 +60,7 @@ export async function authenticate(
   }
 
   if (!user || user.status !== 'active') {
+    // user.status is UserStatus, 'active' is a valid UserStatus value
     return reply.code(401).send({
       success: false,
       error: { code: 'USER_INACTIVE', message: 'Usuário inativo ou não encontrado' },
@@ -67,11 +74,11 @@ export async function authenticate(
     role: payload.role as UserRole,
     permissions: payload.permissions,
     type: 'access',
-    iat: payload.iat,
-    exp: payload.exp,
+    iat: payload.iat ?? Math.floor(Date.now() / 1000),
+    exp: payload.exp ?? Math.floor(Date.now() / 1000) + 900,
   };
 
-  request.tenantId = payload.tenantId;
+  request.tenantId = payload.tenantId ?? null;
 }
 
 export function authorize(...allowedRoles: UserRole[]) {
@@ -177,11 +184,11 @@ export async function optionalAuthenticate(
     role: payload.role as UserRole,
     permissions: payload.permissions,
     type: 'access',
-    iat: payload.iat,
-    exp: payload.exp,
+    iat: payload.iat ?? Math.floor(Date.now() / 1000),
+    exp: payload.exp ?? Math.floor(Date.now() / 1000) + 900,
   };
 
-  request.tenantId = payload.tenantId;
+  request.tenantId = payload.tenantId ?? null;
 }
 
 export function userRateLimit(maxRequests: number = 60, windowMs: number = 60000) {
@@ -197,13 +204,13 @@ export function userRateLimit(maxRequests: number = 60, windowMs: number = 60000
 
     // Usar operação atômica Redis via Lua script para evitar race condition
     const redis = await getRedisClient();
-    const current = await redis.multi()
-      .incr(key)
-      .ttl(key)
-      .exec();
+    const multi = redis.multi();
+    multi.incr(key);
+    multi.ttl(key);
+    const current = await multi.exec() as unknown as Array<[Error | null, number]>;
 
-    const count = current[0] as number;
-    const ttl = current[1] as number;
+    const count = current?.[0]?.[1] ?? 0;
+    const ttl = current?.[1]?.[1] ?? -1;
 
     if (ttl === -1) {
       // Primeira requisição ou expirou, definir TTL

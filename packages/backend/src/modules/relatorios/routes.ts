@@ -10,8 +10,8 @@ import { authorize, requirePermission, requireTenantAccess } from '@/middleware/
 import {
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index';
-import { ReportType, ReportFormat } from '@buy-flow/shared/types/index';
+} from '@buy-flow/shared/validators';
+import { ReportType, ReportFormat } from '@buy-flow/shared/types';
 
 export async function reportRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());

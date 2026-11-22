@@ -10,8 +10,9 @@ import { authorize, requirePermission, requireTenantAccess } from '@/middleware/
 import {
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index';
-import { BiddingModality, BiddingStatus } from '@buy-flow/shared/types/index';
+  BiddingModalitySchema,
+  BiddingStatusSchema,
+} from '@buy-flow/shared/validators';
 
 export async function biddingRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());
@@ -83,7 +84,7 @@ export async function biddingRoutes(app: FastifyInstance) {
 
   app.post('/', { preHandler: [authorize('tenant_admin', 'tenant_manager', 'tenant_operator'), requirePermission('licitacao:create')] }, async (request, reply) => {
     const body = z.object({
-      modality: BiddingModality,
+      modality: BiddingModalitySchema,
       number: z.string().max(50),
       year: z.number().int().min(2020).max(2099),
       processNumber: z.string().max(100).optional(),
@@ -109,7 +110,7 @@ export async function biddingRoutes(app: FastifyInstance) {
       data: {
         ...body,
         tenantId,
-        status: BiddingStatus.planning,
+        status: 'planning',
       },
       include: {
         biddingOrgan: { select: { id: true, name: true, acronym: true } },
@@ -123,7 +124,7 @@ export async function biddingRoutes(app: FastifyInstance) {
   app.patch('/:id', { preHandler: [authorize('tenant_admin', 'tenant_manager', 'tenant_operator'), requirePermission('licitacao:update')] }, async (request, reply) => {
     const { id } = UuidParamSchema.parse(request.params);
     const body = z.object({
-      modality: BiddingModality.optional(),
+      modality: BiddingModalitySchema.optional(),
       number: z.string().max(50).optional(),
       year: z.number().int().min(2020).max(2099).optional(),
       processNumber: z.string().max(100).optional(),
@@ -131,7 +132,7 @@ export async function biddingRoutes(app: FastifyInstance) {
       estimatedValue: z.number().positive().optional(),
       biddingOrganId: z.string().uuid().optional(),
       responsibleId: z.string().uuid().optional(),
-      status: BiddingStatus.optional(),
+      status: BiddingStatusSchema.optional(),
       sessionDate: z.string().datetime().optional(),
       sessionLocation: z.string().max(500).optional(),
       items: z.array(z.object({
@@ -167,7 +168,7 @@ export async function biddingRoutes(app: FastifyInstance) {
 
     const updated = await prisma.bidding.update({
       where: { id },
-      data: { status: BiddingStatus.published, editalUrl },
+      data: { status: 'published', editalUrl },
     });
 
     return { success: true, data: { licitacao: updated } };
@@ -187,7 +188,7 @@ export async function biddingRoutes(app: FastifyInstance) {
 
     const updated = await prisma.bidding.update({
       where: { id },
-      data: { status: BiddingStatus.in_session, sessionDate: body.sessionDate, sessionLocation: body.sessionLocation },
+      data: { status: 'in_session', sessionDate: body.sessionDate, sessionLocation: body.sessionLocation },
     });
 
     return { success: true, data: { licitacao: updated } };
@@ -206,7 +207,7 @@ export async function biddingRoutes(app: FastifyInstance) {
 
     const updated = await prisma.bidding.update({
       where: { id },
-      data: { status: BiddingStatus.judgment },
+      data: { status: 'judgment' },
     });
 
     return { success: true, data: { licitacao: updated } };
@@ -221,7 +222,7 @@ export async function biddingRoutes(app: FastifyInstance) {
 
     const updated = await prisma.bidding.update({
       where: { id },
-      data: { status: BiddingStatus.homologated },
+      data: { status: 'homologated' },
     });
 
     return { success: true, data: { licitacao: updated } };

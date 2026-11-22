@@ -10,8 +10,9 @@ import { authorize, requirePermission, requireTenantAccess } from '@/middleware/
 import {
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index';
-import { SupplierType, SupplierStatus } from '@buy-flow/shared/types/index';
+  SupplierTypeSchema,
+  SupplierStatusSchema,
+} from '@buy-flow/shared/validators';
 
 export async function supplierRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());
@@ -77,7 +78,7 @@ export async function supplierRoutes(app: FastifyInstance) {
 
   app.post('/', { preHandler: [authorize('tenant_admin', 'tenant_manager', 'tenant_operator'), requirePermission('fornecedor:create')] }, async (request, reply) => {
     const body = z.object({
-      type: SupplierType,
+      type: SupplierTypeSchema,
       name: z.string().min(2).max(200),
       tradeName: z.string().max(200).optional(),
       cnpjCpf: z.string().min(11).max(14),
@@ -95,7 +96,7 @@ export async function supplierRoutes(app: FastifyInstance) {
         state: z.string().length(2),
       }).optional(),
       categories: z.array(z.string().uuid()).optional(),
-      status: SupplierStatus.default('active'),
+      status: SupplierStatusSchema.default('active'),
       habilitationValidUntil: z.string().date().optional(),
       bankAccount: z.object({
         bank: z.string().max(100),
@@ -147,7 +148,7 @@ export async function supplierRoutes(app: FastifyInstance) {
         state: z.string().length(2),
       }).optional(),
       categories: z.array(z.string().uuid()).optional(),
-      status: SupplierStatus.optional(),
+      status: SupplierStatusSchema.optional(),
       habilitationValidUntil: z.string().date().optional(),
       bankAccount: z.object({
         bank: z.string().max(100),

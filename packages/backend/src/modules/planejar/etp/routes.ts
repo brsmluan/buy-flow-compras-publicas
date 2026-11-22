@@ -11,8 +11,8 @@ import {
   CreateEtpSchema,
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index';
-import { ETPStatus } from '@buy-flow/shared/types/index';
+  ETPStatusSchema,
+} from '@buy-flow/shared/validators';
 
 export async function etpRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());
@@ -91,7 +91,7 @@ export async function etpRoutes(app: FastifyInstance) {
       data: {
         ...body,
         tenantId,
-        status: ETPStatus.draft,
+        status: 'draft',
       },
       include: { dfd: { select: { id: true, number: true, year: true } } },
     });
@@ -117,7 +117,7 @@ export async function etpRoutes(app: FastifyInstance) {
 
   app.post('/:id/status', { preHandler: [authorize('tenant_admin', 'tenant_manager'), requirePermission('etp:approve')] }, async (request, reply) => {
     const { id } = UuidParamSchema.parse(request.params);
-    const { status } = z.object({ status: ETPStatus }).parse(request.body);
+    const { status } = z.object({ status: ETPStatusSchema }).parse(request.body);
     const tenantId = request.user!.tenantId!;
 
     const etp = await prisma.etp.findFirst({ where: { id, tenantId, deletedAt: null } });

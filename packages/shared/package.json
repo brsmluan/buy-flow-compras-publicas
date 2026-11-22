@@ -12,19 +12,19 @@
       "require": "./dist/index.js"
     },
     "./types": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/types/index.mjs",
-      "require": "./dist/types/index.js"
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.mjs",
+      "require": "./dist/types.js"
     },
     "./constants": {
-      "types": "./dist/constants/index.d.ts",
-      "import": "./dist/constants/index.mjs",
-      "require": "./dist/constants/index.js"
+      "types": "./dist/constants.d.ts",
+      "import": "./dist/constants.mjs",
+      "require": "./dist/constants.js"
     },
     "./validators": {
-      "types": "./dist/validators/index.d.ts",
-      "import": "./dist/validators/index.mjs",
-      "require": "./dist/validators/index.js"
+      "types": "./dist/validators.d.ts",
+      "import": "./dist/validators.mjs",
+      "require": "./dist/validators.js"
     }
   },
   "scripts": {

@@ -14,8 +14,8 @@ import {
   DfdStatusTransitionSchema,
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index';
-import { DFDStatus } from '@buy-flow/shared/types/index';
+} from '@buy-flow/shared/validators';
+import { DFDStatus } from '@buy-flow/shared/types';
 
 export async function dfdRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());
@@ -191,7 +191,7 @@ export async function dfdRoutes(app: FastifyInstance) {
       cancelled: [],
     };
 
-    if (!allowedTransitions[dfd.status].includes(body.newStatus)) {
+    if (!allowedTransitions[dfd.status as DFDStatus].includes(body.newStatus)) {
       throw AppError.badRequest('INVALID_TRANSITION', `Transição de ${dfd.status} para ${body.newStatus} não permitida`);
     }
 
@@ -251,7 +251,8 @@ export async function dfdRoutes(app: FastifyInstance) {
 
   app.get('/stats/summary', { preHandler: authorize('tenant_admin', 'tenant_manager', 'tenant_operator', 'tenant_viewer') }, async (request, reply) => {
     const tenantId = request.user!.tenantId!;
-    const year = Number(request.query.year) || new Date().getFullYear();
+    const query = request.query as { year?: string };
+    const year = Number(query.year) || new Date().getFullYear();
 
     const [total, byStatus, totalValue] = await Promise.all([
       prisma.dfd.count({ where: { tenantId, year, deletedAt: null } }),
@@ -263,7 +264,7 @@ export async function dfdRoutes(app: FastifyInstance) {
       success: true,
       data: {
         total,
-        byStatus: byStatus.reduce((acc, s) => ({ ...acc, [s.status]: s._count }), {}),
+        byStatus: byStatus.reduce((acc: Record<string, number>, s: { status: string; _count: number }) => ({ ...acc, [s.status]: s._count }), {}),
         totalEstimatedValue: totalValue._sum.estimatedValue || 0,
       },
     };
