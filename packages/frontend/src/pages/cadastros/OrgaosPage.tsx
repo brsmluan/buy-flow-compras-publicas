@@ -14,7 +14,7 @@ import { LoadingSpinner, PageLoader } from '../../components/ui/LoadingSpinner';
 import { toast } from 'react-hot-toast';
 import { Building, Plus, Search, Filter, ChevronDown, ChevronUp, Edit, Trash2, Eye, MoreHorizontal, CheckCircle2, XCircle, Clock, Landmark, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDate, formatCurrency, formatRelativeTime } from '../../lib/utils';
-import { OrganType } from '@buy-flow/shared/types/index.js';
+import { OrganType } from '@buy-flow/shared/index.js';
 
 interface Orgao {
   id: string;
@@ -78,9 +78,12 @@ export function OrgaosPage() {
       if (statusFilter) params.append('isActive', statusFilter);
 
       const response = await apiGetPaginated<any>(`/cadastros/orgaos?${params.toString()}`);
-      setOrgaos(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setOrgaos(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Órgãos');
     } finally {
@@ -286,6 +289,3 @@ export function OrgaosPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, Landmark, ChevronLeft, ChevronRight } from 'lucide-react';

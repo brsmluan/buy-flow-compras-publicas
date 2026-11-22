@@ -14,7 +14,7 @@ import { LoadingSpinner, PageLoader } from '../../components/ui/LoadingSpinner';
 import { toast } from 'react-hot-toast';
 import { Building2, Plus, Search, Filter, ChevronDown, ChevronUp, Edit, Trash2, Eye, MoreHorizontal, CheckCircle2, XCircle, Clock, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDate, formatCurrency, formatRelativeTime } from '../../lib/utils';
-import { SupplierType, SupplierStatus } from '@buy-flow/shared/types/index.js';
+import { SupplierType, SupplierStatus } from '@buy-flow/shared/index.js';
 
 interface Fornecedor {
   id: string;
@@ -91,9 +91,12 @@ export function FornecedoresPage() {
       if (typeFilter) params.append('type', typeFilter);
 
       const response = await apiGetPaginated<any>(`/cadastros/fornecedores?${params.toString()}`);
-      setFornecedores(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setFornecedores(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Fornecedores');
     } finally {
@@ -350,6 +353,3 @@ export function FornecedoresPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, Shield, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';

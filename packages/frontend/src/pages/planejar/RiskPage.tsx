@@ -12,9 +12,9 @@ import { Input } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
 import { LoadingSpinner, PageLoader } from '../../components/ui/LoadingSpinner';
 import { toast } from 'react-hot-toast';
-import { AlertTriangle, Plus, Search, Filter, ChevronDown, ChevronUp, Edit, Trash2, Eye, MoreHorizontal, AlertTriangle as AlertTriangleIcon, CheckCircle2, XCircle, Clock, Shield } from 'lucide-react';
+import { AlertTriangle, Plus, Search, Filter, ChevronDown, ChevronUp, Edit, Trash2, Eye, MoreHorizontal, CheckCircle2, XCircle, Clock, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDate, formatCurrency, formatRelativeTime } from '../../lib/utils';
-import { RiskLevel } from '@buy-flow/shared/types/index.js';
+import { RiskLevel } from '@buy-flow/shared/index.js';
 
 interface RiskAnalysis {
   id: string;
@@ -74,9 +74,12 @@ export function RiskPage() {
       if (search) params.append('search', search);
 
       const response = await apiGetPaginated<any>(`/planejar/riscos?${params.toString()}`);
-      setRisks(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setRisks(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Análises de Risco');
     } finally {
@@ -232,7 +235,3 @@ export function RiskPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal } from 'lucide-react';
-import { Search } from 'lucide-react';

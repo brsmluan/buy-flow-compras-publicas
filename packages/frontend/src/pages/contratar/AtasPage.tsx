@@ -57,9 +57,12 @@ export function AtasPage() {
       if (search) params.append('search', search);
 
       const response = await apiGetPaginated<any>(`/contratar/atas?${params.toString()}`);
-      setAtas(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setAtas(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Atas');
     } finally {
@@ -270,6 +273,3 @@ export function AtasPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, Package, Clock, ChevronLeft, ChevronRight } from 'lucide-react';

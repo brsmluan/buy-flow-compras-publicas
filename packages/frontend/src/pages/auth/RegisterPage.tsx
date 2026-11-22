@@ -6,8 +6,9 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateUserSchema, type CreateUser } from '@buy-flow/shared/validators/index.js';
-import { useAuth } from '../../../contexts/AuthContext';
+import { CreateUserSchema, type CreateUser } from '@buy-flow/shared/index.js';
+import { useAuth } from '../../contexts/AuthContext';
+import { apiPost } from '../../lib/api';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
@@ -44,7 +45,7 @@ export function RegisterPage() {
   const onSubmit = async (data: CreateUser) => {
     setIsSubmitting(true);
     try {
-      await login(data);
+      await apiPost('/auth/register', data);
       toast.success('Cadastro realizado com sucesso! Bem-vindo ao Buy-Flow.');
       navigate(from, { replace: true });
     } catch (error: any) {
@@ -209,7 +210,7 @@ export function RegisterPage() {
                 <input
                   type="checkbox"
                   id="terms"
-                  {...register('terms', { required: true })}
+                  required
                   className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                 />
                 <Label htmlFor="terms" className="text-sm text-muted-foreground cursor-pointer">
@@ -266,4 +267,3 @@ export function RegisterPage() {
   );
 }
 
-import { EyeOff } from 'lucide-react';

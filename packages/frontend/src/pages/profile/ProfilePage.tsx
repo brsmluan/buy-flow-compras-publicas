@@ -6,17 +6,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { UpdateUserSchema, ChangePasswordSchema, SetupTwoFactorSchema, VerifyTwoFactorSchema, type UpdateUser, type ChangePassword, type SetupTwoFactor, type VerifyTwoFactor } from '@buy-flow/shared/validators/index.js';
-import { useAuth } from '../../../contexts/AuthContext';
+import { UpdateUserSchema, ChangePasswordSchema, SetupTwoFactorSchema, VerifyTwoFactorSchema, type UpdateUser, type ChangePassword, type SetupTwoFactor, type VerifyTwoFactor } from '@buy-flow/shared/index.js';
+import { useAuth } from '../../contexts/AuthContext';
 import { apiPost, apiPatch } from '../../lib/api';
-import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { LoadingSpinner, PageLoader } from '../../components/ui/LoadingSpinner';
 import { toast } from 'react-hot-toast';
-import { User, Mail, Lock, Shield, Camera, Save, Eye, EyeOff, CheckCircle2, XCircle, Clock, Settings, Bell, Key, QrCode } from 'lucide-react';
+import { User, Mail, Lock, Shield, Camera, Save, Eye, EyeOff, CheckCircle2, XCircle, Clock, Settings, Bell, Key, QrCode, Palette } from 'lucide-react';
 import { formatDate, formatRelativeTime } from '../../lib/utils';
 
 interface UserProfile {
@@ -42,8 +41,6 @@ export function ProfilePage() {
   const { user, updateUser, refreshAccessToken } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'notifications' | 'appearance'>('profile');
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   // Profile data
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
@@ -82,7 +79,7 @@ export function ProfilePage() {
     },
   });
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'notifications' | 'appearance'>('profile');
+  // UI State
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -99,22 +96,6 @@ export function ProfilePage() {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [twoFactorSecret, setTwoFactorSecret] = useState('');
   const [twoFactorQrCode, setTwoFactorQrCode] = useState('');
-  const [showTwoFactorCode, setShowTwoFactorCode] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showTwoFactorCode, setShowTwoFactorCode] = useState(false);
-
-  // Notification settings
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [smsNotifications, setSmsNotifications] = useState(false);
-  const [pushNotifications, setPushNotifications] = useState(true);
-
-  // Two Factor state
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [twoFactorSecret, setTwoFactorSecret] = useState('');
-  const [twoFactorQrCode, setTwoFactorQrCode] = useState('');
-  const [showTwoFactorCode, setShowTwoFactorCode] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -123,7 +104,8 @@ export function ProfilePage() {
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const response = await apiPost('/auth/me');
+      const response = await apiPost<{ data: { user: UserProfile } }>('/auth/me');
+      if (!response.data) throw new Error('No response data');
       const userData = response.data.data.user;
       setProfileData(userData);
 
@@ -151,9 +133,11 @@ export function ProfilePage() {
   const updateProfile = async (data: UpdateUser) => {
     setSaving(true);
     try {
-      const response = await apiPatch('/auth/me', data);
-      setProfileData(prev => prev ? { ...prev, ...response.data.data.user } : null);
-      updateUser(response.data.data.user);
+      const response = await apiPatch<{ data: { user: UserProfile } }>('/auth/me', data);
+      if (!response.data) throw new Error('No response data');
+      const updatedUser = response.data.data.user;
+      setProfileData(prev => prev ? { ...prev, ...updatedUser } : null);
+      updateUser(updatedUser as Parameters<typeof updateUser>[0]);
       toast.success('Perfil atualizado com sucesso');
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao atualizar perfil');
@@ -178,7 +162,8 @@ export function ProfilePage() {
 
   const setupTwoFactor = async () => {
     try {
-      const response = await apiPost('/auth/2fa/setup');
+      const response = await apiPost<{ data: { secret: string; otpauthUrl: string } }>('/auth/2fa/setup');
+      if (!response.data) throw new Error('No response data');
       setTwoFactorSecret(response.data.data.secret);
       setTwoFactorQrCode(response.data.data.otpauthUrl);
       setShowTwoFactorCode(true);
@@ -216,18 +201,19 @@ export function ProfilePage() {
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const target = e.target as HTMLInputElement;
+    const file = target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setAvatarPreview(e.target.result as string);
+      reader.onload = (event) => {
+        setAvatarPreview(event.target?.result as string);
       };
       reader.readAsDataURL(file);
       // TODO: Upload avatar to server
     }
   };
 
-  const tabs = [
+  const tabs: Array<{ id: 'profile' | 'security' | 'notifications' | 'appearance'; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { id: 'profile', label: 'Perfil', icon: User },
     { id: 'security', label: 'Segurança', icon: Shield },
     { id: 'notifications', label: 'Notificações', icon: Bell },
@@ -288,7 +274,7 @@ export function ProfilePage() {
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => setActiveTab(tab.id as 'profile' | 'security' | 'notifications' | 'appearance')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                     activeTab === tab.id
                       ? 'bg-primary text-primary-foreground'
@@ -364,7 +350,7 @@ export function ProfilePage() {
                         </div>
                         <div>
                           <p className="text-muted-foreground">Conta Criada</p>
-                          <p className="font-medium">{formatRelativeTime(profileData?.createdAt)}</p>
+                          <p className="font-medium">{profileData?.createdAt ? formatRelativeTime(profileData.createdAt) : 'N/A'}</p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">2FA</p>
@@ -506,7 +492,7 @@ export function ProfilePage() {
                           <div key={i} className="font-mono text-sm bg-muted p-2 rounded text-center">
                             {Math.random().toString(36).substring(2, 10).toUpperCase()}
                           </div>
-                        )}
+                        ))}
                       </div>
                       <Button variant="destructive" onClick={() => {
                         // TODO: implement disable 2FA
@@ -514,7 +500,7 @@ export function ProfilePage() {
                         Desativar 2FA
                       </Button>
                     </div>
-                  }
+                  )}
                   {showTwoFactorCode && (
                     <div className="space-y-4 border-t pt-4">
                       <h4 className="font-medium">Configurar 2FA</h4>
@@ -546,7 +532,7 @@ export function ProfilePage() {
                         </Button>
                       </form>
                     </div>
-                  }
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -575,7 +561,7 @@ export function ProfilePage() {
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                     </label>
-                  </div>
+                  </label>
                   <label className="flex items-center justify-between">
                     <div>
                       <h4 className="font-medium">Notificações por SMS</h4>
@@ -606,6 +592,7 @@ export function ProfilePage() {
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                     </label>
                   </label>
+                  </div>
                   <Button onClick={updateNotifications} disabled={saving} className="w-full sm:w-auto">
                     <Save className="w-4 h-4 mr-2" />
                     {saving ? 'Salvando...' : 'Salvar Preferências'}
@@ -616,9 +603,5 @@ export function ProfilePage() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
-
-import { apiPost, apiDelete, apiGet, apiPatch } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, Shield, Bell, Palette, Globe, Key, Users, ShieldCheck, Save, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';

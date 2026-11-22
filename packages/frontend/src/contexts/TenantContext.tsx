@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
-import type { Tenant } from '@buy-flow/shared/types/index.js';
+import type { Tenant } from '@buy-flow/shared/index.js';
 
 interface TenantState {
   currentTenant: Tenant | null;
@@ -28,8 +28,8 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
   const loadTenants = async () => {
     try {
-      const response = await api.get('/tenants');
-      const tenants = response.data.data;
+      const response = await api.get<Tenant[]>('/tenants');
+      const tenants = response.data;
       setAvailableTenants(tenants);
 
       // Set current tenant from localStorage or first available

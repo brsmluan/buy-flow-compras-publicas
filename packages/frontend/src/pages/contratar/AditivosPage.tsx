@@ -90,9 +90,12 @@ export function AditivosPage() {
       if (statusFilter) params.append('status', statusFilter);
 
       const response = await apiGetPaginated<any>(`/contratar/aditivos?${params.toString()}`);
-      setAditivos(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setAditivos(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Aditivos');
     } finally {
@@ -343,6 +346,3 @@ export function AditivosPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, FileSignature, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';

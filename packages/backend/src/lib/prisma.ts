@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { PrismaClient } from '@prisma/client';
-import { env } from '../config/index.js';
+import { env } from '../config/index';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

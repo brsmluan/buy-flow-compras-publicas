@@ -3,9 +3,9 @@
 // =============================================================================
 
 import type { FastifyInstance } from 'fastify';
-import { prisma } from '../../lib/prisma.js';
-import { getRedisClient } from '../../lib/redis.js';
-import { env } from '../../config/index.js';
+import { prisma } from '@/lib/prisma';
+import { getRedisClient } from '@/lib/redis';
+import { env } from '../../config/index';
 
 export async function healthRoutes(app: FastifyInstance) {
   app.get('/', async (request, reply) => {

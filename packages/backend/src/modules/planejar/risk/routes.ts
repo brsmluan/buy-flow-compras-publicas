@@ -4,15 +4,15 @@
 
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '../../../lib/prisma.js';
-import { AppError } from '../../../middleware/error.js';
-import { authorize, requirePermission, requireTenantAccess } from '../../../middleware/auth.js';
+import { prisma } from '@/lib/prisma';
+import { AppError } from '@/middleware/error';
+import { authorize, requirePermission, requireTenantAccess } from '@/middleware/auth';
 import {
   CreateRiskAnalysisSchema,
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index.js';
-import { RiskLevel } from '@buy-flow/shared/types/index.js';
+} from '@buy-flow/shared/validators/index';
+import { RiskLevel } from '@buy-flow/shared/types/index';
 
 export async function riskRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());

@@ -79,9 +79,12 @@ export function TermosReferenciaPage() {
       if (statusFilter) params.append('status', statusFilter);
 
       const response = await apiGetPaginated<any>(`/solicitar/termos-referencia?${params.toString()}`);
-      setTermos(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setTermos(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Termos de Referência');
     } finally {
@@ -306,6 +309,3 @@ export function TermosReferenciaPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';

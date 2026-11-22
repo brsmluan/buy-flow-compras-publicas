@@ -7,11 +7,11 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { authenticator } from 'otplib';
-import { prisma } from '../../lib/prisma.js';
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../../lib/jwt.js';
-import { env } from '../../config/index.js';
-import { cache } from '../../lib/redis.js';
-import { AppError } from '../../middleware/error.js';
+import { prisma } from '@/lib/prisma';
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../../lib/jwt';
+import { env } from '../../config/index';
+import { cache } from '@/lib/redis';
+import { AppError } from '@/middleware/error';
 import {
   LoginSchema,
   CreateUserSchema,
@@ -20,8 +20,8 @@ import {
   ChangePasswordSchema,
   SetupTwoFactorSchema,
   VerifyTwoFactorSchema,
-} from '@buy-flow/shared/validators/index.js';
-import type { UserRole } from '@buy-flow/shared/types/index.js';
+} from '@buy-flow/shared/validators/index';
+import type { UserRole } from '@buy-flow/shared/types/index';
 
 export async function authRoutes(app: FastifyInstance) {
   // ---------------------------------------------------------------------------

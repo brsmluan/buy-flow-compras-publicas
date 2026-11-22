@@ -14,7 +14,7 @@ import { LoadingSpinner, PageLoader } from '../../components/ui/LoadingSpinner';
 import { toast } from 'react-hot-toast';
 import { BarChart3, Plus, Search, Filter, ChevronDown, ChevronUp, Edit, Trash2, Eye, MoreHorizontal, Download, FileSpreadsheet, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDate, formatCurrency, formatRelativeTime } from '../../lib/utils';
-import { ReportType, ReportFormat } from '@buy-flow/shared/types/index.js';
+import { ReportType, ReportFormat } from '@buy-flow/shared/index.js';
 
 interface Relatorio {
   id: string;
@@ -75,13 +75,25 @@ export function RelatoriosPage() {
       if (typeFilter) params.append('type', typeFilter);
 
       const response = await apiGetPaginated<any>(`/relatorios?${params.toString()}`);
-      setRelatorios(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setRelatorios(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Relatórios');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
     }
   };
 
@@ -280,6 +292,3 @@ export function RelatoriosPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, Download, FileSpreadsheet, ChevronLeft, ChevronRight } from 'lucide-react';

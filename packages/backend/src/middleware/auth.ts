@@ -3,11 +3,11 @@
 // =============================================================================
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { verifyAccessToken, extractTokenFromHeader } from '../lib/jwt.js';
-import { prisma } from '../lib/prisma.js';
-import { cache } from '../lib/redis.js';
-import { env } from '../config/index.js';
-import type { UserRole, TokenPayload } from '@buy-flow/shared/types/index.js';
+import { verifyAccessToken, extractTokenFromHeader } from '../lib/jwt';
+import { prisma } from '../lib/prisma';
+import { cache } from '../lib/redis';
+import { env } from '../config/index';
+import type { UserRole, TokenPayload } from '@buy-flow/shared/types/index';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -220,6 +220,6 @@ export function userRateLimit(maxRequests: number = 60, windowMs: number = 60000
 }
 
 async function getRedisClient() {
-  const { getRedisClient: getClient } = await import('../lib/redis.js');
+  const { getRedisClient: getClient } = await import('../lib/redis');
   return getClient();
 }

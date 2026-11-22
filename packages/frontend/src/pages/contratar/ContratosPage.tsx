@@ -14,7 +14,7 @@ import { LoadingSpinner, PageLoader } from '../../components/ui/LoadingSpinner';
 import { toast } from 'react-hot-toast';
 import { FileSignature, Plus, Search, Filter, ChevronDown, ChevronUp, Edit, Trash2, Eye, MoreHorizontal, CheckCircle2, XCircle, Clock, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDate, formatCurrency, formatRelativeTime } from '../../lib/utils';
-import { ContractStatus } from '@buy-flow/shared/types/index.js';
+import { ContractStatus } from '@buy-flow/shared/index.js';
 
 interface Contrato {
   id: string;
@@ -93,9 +93,12 @@ export function ContratosPage() {
       if (statusFilter) params.append('status', statusFilter);
 
       const response = await apiGetPaginated<any>(`/contratar/contratos?${params.toString()}`);
-      setContratos(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setContratos(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Contratos');
     } finally {
@@ -402,6 +405,3 @@ export function ContratosPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, FileSignature, Clock, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';

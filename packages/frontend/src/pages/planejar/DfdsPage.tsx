@@ -13,9 +13,9 @@ import { Label } from '../../components/ui/Label';
 import { Badge } from '../../components/ui/Badge';
 import { LoadingSpinner, PageLoader } from '../../components/ui/LoadingSpinner';
 import { toast } from 'react-hot-toast';
-import { FileText, Plus, Search, Filter, ChevronDown, ChevronUp, Edit, Trash2, Eye, MoreHorizontal, AlertTriangle, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { FileText, Plus, Search, Filter, ChevronDown, ChevronUp, Edit, Trash2, Eye, MoreHorizontal, AlertTriangle, CheckCircle2, XCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDate, formatCurrency, formatRelativeTime } from '../../lib/utils';
-import { DFDStatus } from '@buy-flow/shared/types/index.js';
+import { DFDStatus } from '@buy-flow/shared/index.js';
 
 interface DFD {
   id: string;
@@ -86,9 +86,12 @@ export function DfdsPage() {
       if (statusFilter) params.append('status', statusFilter);
 
       const response = await apiGetPaginated<DFD>(`/planejar/dfds?${params.toString()}`);
-      setDfds(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setDfds(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar DFDs');
     } finally {
@@ -294,5 +297,3 @@ export function DfdsPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';

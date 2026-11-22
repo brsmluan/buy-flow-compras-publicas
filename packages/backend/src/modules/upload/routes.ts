@@ -4,10 +4,10 @@
 
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '../../../lib/prisma.js';
-import { AppError } from '../../../middleware/error.js';
-import { authorize, requirePermission, requireTenantAccess } from '../../../middleware/auth.js';
-import { env } from '../../../config/index.js';
+import { prisma } from '@/lib/prisma';
+import { AppError } from '@/middleware/error';
+import { authorize, requirePermission, requireTenantAccess } from '@/middleware/auth';
+import { env } from '@/config/index';
 
 export async function uploadRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireTenantAccess());

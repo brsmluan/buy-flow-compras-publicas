@@ -55,9 +55,12 @@ export function ChamadasPublicasPage() {
       if (search) params.append('search', search);
 
       const response = await apiGetPaginated<any>(`/cotar/chamadas-publicas?${params.toString()}`);
-      setChamadas(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setChamadas(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Chamadas Públicas');
     } finally {
@@ -259,6 +262,3 @@ export function ChamadasPublicasPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, ChevronLeft, ChevronRight } from 'lucide-react';

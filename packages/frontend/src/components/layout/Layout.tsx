@@ -115,14 +115,14 @@ export function Layout() {
     localStorage.setItem('darkMode', darkMode.toString());
   }, [darkMode]);
 
-  const filteredNav = navigation.filter(item =>
+  const filteredNav = navigation.filter((item) =>
     !item.roles || (user && item.roles.includes(user.role))
-  ).map(item => ({
+  ).map((item) => ({
     ...item,
-    children: item.children?.filter(child =>
-      !child.roles || (user && child.roles.includes(child.role))
+    children: item.children?.filter((child) =>
+      !child.roles || (user && child.roles.includes(user.role))
     ) || [],
-  })).filter(item => !item.children || item.children.length > 0);
+  })).filter((item) => !item.children || item.children.length > 0);
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -318,11 +318,26 @@ export function Layout() {
   );
 }
 
-function NavItem({ item }: { item: typeof navigation[0] }) {
+interface NavItemProps {
+  item: {
+    name: string;
+    href?: string;
+    icon: React.ComponentType<{ className?: string }>;
+    roles?: string[];
+    children?: Array<{
+      name: string;
+      href: string;
+      icon: React.ComponentType<{ className?: string }>;
+      roles?: string[];
+    }>;
+  };
+}
+
+function NavItem({ item }: NavItemProps) {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const isActive = item.href ? location.pathname === item.href :
-    item.children?.some(child => location.pathname === child.href);
+    item.children?.some((child) => location.pathname === child.href);
 
   if (item.children && item.children.length > 0) {
     return (
@@ -366,7 +381,7 @@ function NavItem({ item }: { item: typeof navigation[0] }) {
 
   return (
     <NavLink
-      to={item.href}
+      to={item.href || '#'}
       className={({ isActive }) => cn(
         'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
         isActive

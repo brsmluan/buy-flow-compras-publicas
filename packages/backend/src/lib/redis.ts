@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { createClient, RedisClientType } from 'redis';
-import { env } from '../config/index.js';
+import { env } from '../config/index';
 
 let redisClient: RedisClientType | null = null;
 

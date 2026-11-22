@@ -68,9 +68,12 @@ export function InexigibilidadesPage() {
       if (search) params.append('search', search);
 
       const response = await apiGetPaginated<any>(`/cotar/inexigibilidades?${params.toString()}`);
-      setInexigibilidades(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setInexigibilidades(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Inexigibilidades');
     } finally {
@@ -127,7 +130,8 @@ export function InexigibilidadesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Inexigibilidades de Licitação</h1>
-          <p className="text-muted-foreground mt-1">Inexigibilidade por único fornecedor, profissional especializado, etc.</        </div>
+          <p className="text-muted-foreground mt-1">Inexigibilidade por único fornecedor, profissional especializado, etc.</p>
+        </div>
         <Button onClick={() => navigate('/cotar/inexigibilidades/new')} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           Nova Inexigibilidade
@@ -288,6 +292,3 @@ export function InexigibilidadesPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';

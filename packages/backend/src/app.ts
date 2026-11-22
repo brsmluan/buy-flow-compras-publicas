@@ -3,37 +3,37 @@
 // =============================================================================
 
 import Fastify, { FastifyInstance } from 'fastify';
-import { env } from './config/index.js';
-import { errorHandler, notFoundHandler } from './middleware/error.js';
-import { authenticate, optionalAuthenticate } from './middleware/auth.js';
-import { prisma } from './lib/prisma.js';
-import { closeRedis } from './lib/redis.js';
+import { env } from './config/index';
+import { errorHandler, notFoundHandler } from './middleware/error';
+import { authenticate, optionalAuthenticate } from './middleware/auth';
+import { prisma } from './lib/prisma';
+import { closeRedis } from './lib/redis';
 
 // Import routes
-import { authRoutes } from './modules/auth/routes.js';
-import { tenantRoutes } from './modules/tenants/routes.js';
-import { userRoutes } from './modules/users/routes.js';
-import { dfdRoutes } from './modules/planejar/dfd/routes.js';
-import { etpRoutes } from './modules/planejar/etp/routes.js';
-import { riskRoutes } from './modules/planejar/risk/routes.js';
-import { cotacaoRoutes } from './modules/solicitar/cotacao/routes.js';
-import { termoRefRoutes } from './modules/solicitar/termo-referencia/routes.js';
-import { biddingRoutes } from './modules/cotar/bidding/routes.js';
-import { dispensaRoutes } from './modules/cotar/dispensa/routes.js';
-import { inexigibilidadeRoutes } from './modules/cotar/inexigibilidade/routes.js';
-import { credenciamentoRoutes } from './modules/cotar/credenciamento/routes.js';
-import { chamadaPublicaRoutes } from './modules/cotar/chamada-publica/routes.js';
-import { contractRoutes } from './modules/contratar/contract/routes.js';
-import { addendumRoutes } from './modules/contratar/addendum/routes.js';
-import { ataRoutes } from './modules/contratar/ata/routes.js';
-import { purchaseOrderRoutes } from './modules/comprar/pedido-compra/routes.js';
-import { supplierRoutes } from './modules/cadastros/fornecedor/routes.js';
-import { itemRoutes } from './modules/cadastros/item/routes.js';
-import { organRoutes } from './modules/cadastros/orgao/routes.js';
-import { reportRoutes } from './modules/relatorios/routes.js';
-import { configRoutes } from './modules/configuracao/routes.js';
-import { uploadRoutes } from './modules/upload/routes.js';
-import { healthRoutes } from './modules/health/routes.js';
+import { authRoutes } from './modules/auth/routes';
+import { tenantRoutes } from './modules/tenants/routes';
+import { userRoutes } from './modules/users/routes';
+import { dfdRoutes } from './modules/planejar/dfd/routes';
+import { etpRoutes } from './modules/planejar/etp/routes';
+import { riskRoutes } from './modules/planejar/risk/routes';
+import { cotacaoRoutes } from './modules/solicitar/cotacao/routes';
+import { termoRefRoutes } from './modules/solicitar/termo-referencia/routes';
+import { biddingRoutes } from './modules/cotar/bidding/routes';
+import { dispensaRoutes } from './modules/cotar/dispensa/routes';
+import { inexigibilidadeRoutes } from './modules/cotar/inexigibilidade/routes';
+import { credenciamentoRoutes } from './modules/cotar/credenciamento/routes';
+import { chamadaPublicaRoutes } from './modules/cotar/chamada-publica/routes';
+import { contractRoutes } from './modules/contratar/contract/routes';
+import { addendumRoutes } from './modules/contratar/addendum/routes';
+import { ataRoutes } from './modules/contratar/ata/routes';
+import { purchaseOrderRoutes } from './modules/comprar/pedido-compra/routes';
+import { supplierRoutes } from './modules/cadastros/fornecedor/routes';
+import { itemRoutes } from './modules/cadastros/item/routes';
+import { organRoutes } from './modules/cadastros/orgao/routes';
+import { reportRoutes } from './modules/relatorios/routes';
+import { configRoutes } from './modules/configuracao/routes';
+import { uploadRoutes } from './modules/upload/routes';
+import { healthRoutes } from './modules/health/routes';
 
 async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({

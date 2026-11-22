@@ -6,17 +6,17 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { prisma } from '../../lib/prisma.js';
-import { cache } from '../../lib/redis.js';
-import { AppError } from '../../middleware/error.js';
-import { authorize } from '../../middleware/auth.js';
+import { prisma } from '@/lib/prisma';
+import { cache } from '@/lib/redis';
+import { AppError } from '@/middleware/error';
+import { authorize } from '@/middleware/auth';
 import {
   CreateTenantSchema,
   UpdateTenantSchema,
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index.js';
-import { ROLE_DEFAULT_PERMISSIONS } from '@buy-flow/shared/constants/index.js';
+} from '@buy-flow/shared/validators/index';
+import { ROLE_DEFAULT_PERMISSIONS } from '@buy-flow/shared/constants/index';
 
 export async function tenantRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authorize('platform_owner', 'platform_admin'));

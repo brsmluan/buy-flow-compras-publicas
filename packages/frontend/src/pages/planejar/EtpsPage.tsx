@@ -12,9 +12,9 @@ import { Input } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
 import { LoadingSpinner, PageLoader } from '../../components/ui/LoadingSpinner';
 import { toast } from 'react-hot-toast';
-import { ClipboardList, Plus, Search, Filter, ChevronDown, ChevronUp, Edit, Trash2, Eye, MoreHorizontal, AlertTriangle, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { ClipboardList, Plus, Search, Filter, ChevronDown, ChevronUp, Edit, Trash2, Eye, MoreHorizontal, AlertTriangle, CheckCircle2, XCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDate, formatCurrency, formatRelativeTime } from '../../lib/utils';
-import { ETPStatus } from '@buy-flow/shared/types/index.js';
+import { ETPStatus } from '@buy-flow/shared/index.js';
 
 interface ETP {
   id: string;
@@ -82,9 +82,12 @@ export function EtpsPage() {
       if (statusFilter) params.append('status', statusFilter);
 
       const response = await apiGetPaginated<ETP>(`/planejar/etps?${params.toString()}`);
-      setEtps(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setEtps(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar ETPs');
     } finally {
@@ -278,6 +281,3 @@ export function EtpsPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal } from 'lucide-react';

@@ -55,9 +55,12 @@ export function CredenciamentosPage() {
       if (search) params.append('search', search);
 
       const response = await apiGetPaginated<any>(`/cotar/credenciamentos?${params.toString()}`);
-      setCredenciamentos(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setCredenciamentos(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Credenciamentos');
     } finally {
@@ -257,6 +260,3 @@ export function CredenciamentosPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, ChevronLeft, ChevronRight } from 'lucide-react';

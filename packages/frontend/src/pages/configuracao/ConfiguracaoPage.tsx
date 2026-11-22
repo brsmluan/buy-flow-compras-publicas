@@ -69,19 +69,6 @@ export function ConfiguracaoPage() {
   const [govbrClientId, setGovbrClientId] = useState('');
   const [govbrClientSecret, setGovbrClientSecret] = useState('');
 
-  // Notification settings
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [smsNotifications, setSmsNotifications] = useState(false);
-  const [pushNotifications, setPushNotifications] = useState(true);
-
-  // Integration settings
-  const [pncpEnabled, setPncpEnabled] = useState(false);
-  const [pncpClientId, setPncpClientId] = useState('');
-  const [pncpClientSecret, setPncpClientSecret] = useState('');
-  const [govbrEnabled, setGovbrEnabled] = useState(false);
-  const [govbrClientId, setGovbrClientId] = useState('');
-  const [govbrClientSecret, setGovbrClientSecret] = useState('');
-
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -91,10 +78,10 @@ export function ConfiguracaoPage() {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      const response = await apiGet('/configuracao');
-      const configs = response.data;
+      const response = await apiGet<{ data: Array<{ key: string; value: string }> }>('/configuracao');
+      const configs = response.data?.data || [];
 
-      configs.forEach((config: any) => {
+      configs.forEach((config: { key: string; value: string }) => {
         switch (config.key) {
           case 'tenant_name':
             setTenantName(config.value);
@@ -106,10 +93,10 @@ export function ConfiguracaoPage() {
             setTenantCnpj(config.value);
             break;
           case 'allow_supplier_portal':
-            setAllowSupplierPortal(config.value);
+            setAllowSupplierPortal(config.value === 'true');
             break;
           case 'require_two_factor':
-            setRequireTwoFactor(config.value);
+            setRequireTwoFactor(config.value === 'true');
             break;
           case 'legal_values_version':
             setLegalValuesVersion(config.value);
@@ -124,7 +111,7 @@ export function ConfiguracaoPage() {
             setCustomDomain(config.value);
             break;
           case 'pncp_enabled':
-            setPncpEnabled(config.value);
+            setPncpEnabled(config.value === 'true');
             break;
           case 'pncp_client_id':
             setPncpClientId(config.value);
@@ -133,7 +120,7 @@ export function ConfiguracaoPage() {
             setPncpClientSecret(config.value);
             break;
           case 'govbr_enabled':
-            setGovbrEnabled(config.value);
+            setGovbrEnabled(config.value === 'true');
             break;
           case 'govbr_client_id':
             setGovbrClientId(config.value);
@@ -142,16 +129,16 @@ export function ConfiguracaoPage() {
             setGovbrClientSecret(config.value);
             break;
           case 'email_notifications':
-            setEmailNotifications(config.value);
+            setEmailNotifications(config.value === 'true');
             break;
           case 'sms_notifications':
-            setSmsNotifications(config.value);
+            setSmsNotifications(config.value === 'true');
             break;
           case 'push_notifications':
-            setPushNotifications(config.value);
+            setPushNotifications(config.value === 'true');
             break;
           case 'two_factor_enabled':
-            setTwoFactorEnabled(config.value);
+            setTwoFactorEnabled(config.value === 'true');
             break;
           case 'two_factor_secret':
             setTwoFactorSecret(config.value);
@@ -230,8 +217,8 @@ export function ConfiguracaoPage() {
 
   const setupTwoFactor = async () => {
     try {
-      const response = await apiPost('/auth/2fa/setup');
-      setTwoFactorSecret(response.data.data.secret);
+      const response = await apiPost<{ data: { secret: string } }>('/auth/2fa/setup');
+      if (response.data) setTwoFactorSecret(response.data.data.secret);
     } catch (error: any) {
       toast.error('Erro ao configurar 2FA');
     }
@@ -247,7 +234,7 @@ export function ConfiguracaoPage() {
     }
   };
 
-  const tabs = [
+  const tabs: Array<{ id: 'general' | 'appearance' | 'security' | 'notifications' | 'integrations'; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { id: 'general', label: 'Geral', icon: Settings },
     { id: 'appearance', label: 'Aparência', icon: Palette },
     { id: 'security', label: 'Segurança', icon: Shield },
@@ -367,9 +354,10 @@ export function ConfiguracaoPage() {
                 </CardContent>
               </Card>
             </div>
+          )}
 
-            {/* Appearance Tab */}
-            {activeTab === 'appearance' && (
+          {/* Appearance Tab */}
+          {activeTab === 'appearance' && (
               <Card>
                 <CardHeader>
                   <CardTitle>Aparência</CardTitle>
@@ -560,7 +548,7 @@ export function ConfiguracaoPage() {
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                       </label>
-                    </div>
+                    </label>
                     <label className="flex items-center justify-between">
                       <div>
                         <h4 className="font-medium">Notificações por SMS</h4>
@@ -590,7 +578,7 @@ export function ConfiguracaoPage() {
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                       </label>
-                    </label>
+                  </label>
                   </div>
                 </CardContent>
               </Card>
@@ -691,9 +679,5 @@ export function ConfiguracaoPage() {
           </div>
         </div>
       </div>
-    </div>
   );
 }
-
-import { apiPost, apiDelete, apiGet, apiPatch } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, Shield, Bell, Palette, Globe, Key, Users, ShieldCheck, Save, RefreshCw, Palette, Globe, Key, Users, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react';

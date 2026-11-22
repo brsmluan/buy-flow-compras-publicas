@@ -14,7 +14,7 @@ import { LoadingSpinner, PageLoader } from '../../components/ui/LoadingSpinner';
 import { toast } from 'react-hot-toast';
 import { ShoppingCart, Plus, Search, Filter, ChevronDown, ChevronUp, Edit, Trash2, Eye, MoreHorizontal, CheckCircle2, XCircle, Clock, FileText, DollarSign, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDate, formatCurrency, formatRelativeTime } from '../../lib/utils';
-import { PurchaseOrderStatus } from '@buy-flow/shared/types/index.js';
+import { PurchaseOrderStatus } from '@buy-flow/shared/index.js';
 
 interface PedidoCompra {
   id: string;
@@ -92,9 +92,12 @@ export function PedidosCompraPage() {
       if (statusFilter) params.append('status', statusFilter);
 
       const response = await apiGetPaginated<any>(`/comprar/pedidos?${params.toString()}`);
-      setPedidos(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setPedidos(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Pedidos de Compra');
     } finally {
@@ -378,6 +381,3 @@ export function PedidosCompraPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, DollarSign, Package, ChevronLeft, ChevronRight, FileText } from 'lucide-react';

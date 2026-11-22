@@ -6,8 +6,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ForgotPasswordSchema, type ForgotPassword } from '@buy-flow/shared/validators/index.js';
-import { useAuth } from '../../../contexts/AuthContext';
+import { ForgotPasswordSchema, type ForgotPassword } from '@buy-flow/shared/index.js';
+import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
@@ -145,4 +145,3 @@ export function ForgotPasswordPage() {
 }
 
 import { apiPost } from '../../lib/api';
-import { ArrowLeft } from 'lucide-react';

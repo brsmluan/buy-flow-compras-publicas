@@ -76,9 +76,12 @@ export function CotacoesPage() {
       if (statusFilter) params.append('status', statusFilter);
 
       const response = await apiGetPaginated<any>(`/solicitar/cotacoes?${params.toString()}`);
-      setCotacoes(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setCotacoes(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Cotações');
     } finally {
@@ -313,6 +316,3 @@ export function CotacoesPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, Send, Package, BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';

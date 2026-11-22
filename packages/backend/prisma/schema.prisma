@@ -203,6 +203,17 @@ model Tenant {
   organs        Organ[]
   auditLogs     AuditLog[]
   reports       Report[]
+  dispensas     Dispensa[]
+  inexigibilidades Inexigibilidade[]
+  credenciamentos Credenciamento[]
+  chamadasPublicas ChamadaPublica[]
+  atas           Ata[]
+  atasItems      AtaItem[]        @relation("TenantAtaItems")
+  purchaseOrderItems PurchaseOrderItem[] @relation("TenantPurchaseOrderItems")
+  cotacoes       Cotacao[]
+  cotacaoPropostas CotacaoProposta[] @relation("TenantCotacaoPropostas")
+  termosReferencia TermoReferencia[]
+  cotacaoItems    CotacaoItem[]    @relation("TenantCotacaoItems")
 
   @@index([slug])
   @@index([cnpj])
@@ -235,8 +246,14 @@ model User {
   dfdsApproved      DFD[]      @relation("DFDApprover")
   biddingsResponsible Bidding[] @relation("BiddingResponsible")
   contractsManager  Contract[] @relation("ContractManager")
+  contractsSigned   Contract[] @relation("ContractSigner")
   purchaseOrdersRequester PurchaseOrder[] @relation("PORequester")
+  cotacoesRequested Cotacao[] @relation("CotacaoRequestedBy")
+  contractAddendaSigned ContractAddendum[] @relation("ContractAddendumSigner")
+  organsManaged     Organ[]    @relation("OrganManager")
   auditLogs         AuditLog[]
+  termoReferenciaApproved TermoReferencia[] @relation("TermoReferenciaApprovedBy")
+  termoReferenciaCreated TermoReferencia[] @relation("TermoReferenciaCreatedBy")
 
   @@index([tenantId])
   @@index([email])
@@ -275,6 +292,8 @@ model DFD {
   approver             User?       @relation("DFDApprover", fields: [approvedBy], references: [id])
   budgetSource         Organ       @relation("DFDBudgetSource", fields: [budgetSourceId], references: [id])
   etps                 ETP[]
+  termoReferencias     TermoReferencia[] @relation("TermoReferenciaDFD")
+  riskAnalyses         RiskAnalysis[] @relation("RiskAnalysisDFD")
 
   @@unique([tenantId, number, year])
   @@index([tenantId])
@@ -301,9 +320,10 @@ model ETP {
   updatedAt            DateTime  @updatedAt
   deletedAt            DateTime?
 
-  tenant               Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant               Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   dfd                  DFD       @relation(fields: [dfdId], references: [id], onDelete: Cascade)
-  riskAnalyses         RiskAnalysis[]
+  riskAnalyses         RiskAnalysis[] @relation("RiskAnalysisETP")
+  termoReferencias     TermoReferencia[] @relation("TermoReferenciaETP")
 
   @@index([tenantId])
   @@index([status])
@@ -323,7 +343,10 @@ model RiskAnalysis {
   deletedAt           DateTime?
 
   tenant              Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  etp                 ETP?        @relation(fields: [relatedEntityId], references: [id])
+  etp                 ETP?        @relation("RiskAnalysisETP", fields: [relatedEntityId], references: [id], map: "risk_analyses_etp_fkey")
+  dfd                 DFD?        @relation("RiskAnalysisDFD", fields: [relatedEntityId], references: [id], map: "risk_analyses_dfd_fkey")
+  bidding             Bidding?    @relation("RiskAnalysisBidding", fields: [relatedEntityId], references: [id], map: "risk_analyses_bidding_fkey")
+  contract            Contract?   @relation("RiskAnalysisContract", fields: [relatedEntityId], references: [id], map: "risk_analyses_contract_fkey")
 
   @@index([tenantId])
   @@index([relatedEntityId, relatedEntityType])
@@ -359,6 +382,12 @@ model Bidding {
   biddingOrgan         Organ             @relation("BiddingOrgan", fields: [biddingOrganId], references: [id])
   responsible          User              @relation("BiddingResponsible", fields: [responsibleId], references: [id])
   contracts            Contract[]
+  dispensas            Dispensa[]       @relation("DispensaBidding")
+  inexigibilidades     Inexigibilidade[] @relation("InexigibilidadeBidding")
+  credenciamentos      Credenciamento[]  @relation("CredenciamentoBidding")
+  chamadasPublicas     ChamadaPublica[]  @relation("ChamadaPublicaBidding")
+  atas                 Ata[]            @relation("AtaBidding")
+  riskAnalyses         RiskAnalysis[]   @relation("RiskAnalysisBidding")
 
   @@unique([tenantId, number, year])
   @@index([tenantId])
@@ -385,7 +414,7 @@ model Dispensa {
   deletedAt              DateTime?
 
   tenant                 Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bidding                Bidding      @relation(fields: [biddingId], references: [id], onDelete: Cascade)
+  bidding                Bidding      @relation("DispensaBidding", fields: [biddingId], references: [id], onDelete: Cascade)
   supplier               Supplier?    @relation(fields: [supplierId], references: [id])
 
   @@index([tenantId])
@@ -410,7 +439,7 @@ model Inexigibilidade {
   deletedAt                  DateTime?
 
   tenant                     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bidding                    Bidding      @relation(fields: [biddingId], references: [id], onDelete: Cascade)
+  bidding                    Bidding      @relation("InexigibilidadeBidding", fields: [biddingId], references: [id], onDelete: Cascade)
   supplier                   Supplier     @relation(fields: [supplierId], references: [id])
 
   @@index([tenantId])
@@ -430,7 +459,7 @@ model Credenciamento {
   deletedAt            DateTime?
 
   tenant               Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bidding              Bidding      @relation(fields: [biddingId], references: [id], onDelete: Cascade)
+  bidding              Bidding      @relation("CredenciamentoBidding", fields: [biddingId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@map("credenciamentos")
@@ -449,7 +478,7 @@ model ChamadaPublica {
   deletedAt            DateTime?
 
   tenant               Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bidding              Bidding      @relation(fields: [biddingId], references: [id], onDelete: Cascade)
+  bidding              Bidding      @relation("ChamadaPublicaBidding", fields: [biddingId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@map("chamadas_publicas")
@@ -488,8 +517,10 @@ model Contract {
   organ             Organ          @relation("ContractOrgan", fields: [organId], references: [id])
   manager           User           @relation("ContractManager", fields: [managerId], references: [id])
   signer            User?          @relation("ContractSigner", fields: [signedBy], references: [id])
-  addenda           ContractAddendum[]
+  addenda           ContractAddendum[] @relation("ContractAddendumContract")
   purchaseOrders    PurchaseOrder[]
+  purchaseOrderItems PurchaseOrderItem[] @relation("ContractPurchaseOrderItems")
+  riskAnalyses      RiskAnalysis[] @relation("RiskAnalysisContract")
 
   @@unique([tenantId, number, year])
   @@index([tenantId])
@@ -518,8 +549,8 @@ model ContractAddendum {
   updatedAt         DateTime      @updatedAt
   deletedAt         DateTime?
 
-  contract          Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  signer            User?         @relation(fields: [signedBy], references: [id])
+  parentContract    Contract      @relation("ContractAddendumContract", fields: [contractId], references: [id], onDelete: Cascade)
+  signer            User?         @relation("ContractAddendumSigner", fields: [signedBy], references: [id])
 
   @@index([contractId])
   @@index([status])
@@ -556,6 +587,7 @@ model PurchaseOrder {
   supplier             Supplier              @relation(fields: [supplierId], references: [id])
   requestingOrgan      Organ                 @relation("PORequestingOrgan", fields: [requestingOrganId], references: [id])
   requester            User                  @relation("PORequester", fields: [requesterId], references: [id])
+  orderItems           PurchaseOrderItem[]   @relation("PurchaseOrderItemPurchaseOrder")
 
   @@unique([tenantId, number, year])
   @@index([tenantId])
@@ -596,6 +628,8 @@ model Supplier {
   biddingsInexigibilidade Inexigibilidade[]
   contracts               Contract[]
   purchaseOrders          PurchaseOrder[]
+  cotacaoPropostas        CotacaoProposta[] @relation("CotacaoPropostaSupplier")
+  ataItems                AtaItem[]        @relation("AtaItemSupplier")
 
   @@unique([tenantId, cnpjCpf])
   @@index([tenantId])
@@ -646,6 +680,9 @@ model Item {
 
   tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category         ItemCategory @relation(fields: [categoryId], references: [id])
+  ataItems         AtaItem[]        @relation("AtaItemItem")
+  purchaseOrderItems PurchaseOrderItem[] @relation("PurchaseOrderItemItem")
+  cotacaoItems     CotacaoItem[]    @relation("CotacaoItemItem")
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -675,12 +712,12 @@ model Organ {
   tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   parent        Organ?     @relation("OrganHierarchy", fields: [parentId], references: [id])
   children      Organ[]    @relation("OrganHierarchy")
-  manager       User?      @relation(fields: [managerId], references: [id])
+  manager       User?      @relation("OrganManager", fields: [managerId], references: [id])
   dfdsRequested DFD[]      @relation("DFDRequestingOrgan")
   dfdsBudget    DFD[]      @relation("DFDBudgetSource")
   biddings      Bidding[]  @relation("BiddingOrgan")
   contracts     Contract[] @relation("ContractOrgan")
-  purchaseOrdersPurchaseOrder[] @relation("PORequestingOrgan")
+  purchaseOrders PurchaseOrder[] @relation("PORequestingOrgan")
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -838,9 +875,9 @@ model Cotacao {
   deletedAt       DateTime?
 
   tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  requestedBy     User     @relation(fields: [requestedById], references: [id])
-  items           CotacaoItem[]
-  proposals       CotacaoProposta[]
+  requestedBy     User     @relation("CotacaoRequestedBy", fields: [requestedById], references: [id])
+  items           CotacaoItem[] @relation("CotacaoItemCotacao")
+  proposals       CotacaoProposta[] @relation("CotacaoPropostaCotacao")
 
   @@index([tenantId])
   @@index([status])
@@ -849,6 +886,7 @@ model Cotacao {
 
 model CotacaoItem {
   id            String   @id @default(uuid())
+  tenantId      String
   cotacaoId     String
   itemId        String
   quantity      Decimal  @db.Decimal(15, 3)
@@ -856,23 +894,29 @@ model CotacaoItem {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  cotacao       Cotacao  @relation(fields: [cotacaoId], references: [id], onDelete: Cascade)
+  tenant        Tenant   @relation("TenantCotacaoItems", fields: [tenantId], references: [id], onDelete: Cascade)
+  cotacao       Cotacao  @relation("CotacaoItemCotacao", fields: [cotacaoId], references: [id], onDelete: Cascade)
+  item          Item     @relation("CotacaoItemItem", fields: [itemId], references: [id])
 
+  @@index([tenantId])
   @@index([cotacaoId])
   @@map("cotacao_items")
 }
 
 model CotacaoProposta {
   id            String   @id @default(uuid())
+  tenantId      String
   cotacaoId     String
   supplierId    String
   items         Json     @default("[]")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  cotacao       Cotacao  @relation(fields: [cotacaoId], references: [id], onDelete: Cascade)
-  supplier      Supplier @relation(fields: [supplierId], references: [id])
+  tenant        Tenant   @relation("TenantCotacaoPropostas", fields: [tenantId], references: [id], onDelete: Cascade)
+  cotacao       Cotacao   @relation("CotacaoPropostaCotacao", fields: [cotacaoId], references: [id], onDelete: Cascade)
+  supplier      Supplier  @relation("CotacaoPropostaSupplier", fields: [supplierId], references: [id])
 
+  @@index([tenantId])
   @@index([cotacaoId])
   @@index([supplierId])
   @@map("cotacao_propostas")
@@ -898,10 +942,10 @@ model TermoReferencia {
   deletedAt             DateTime?
 
   tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  dfd                   DFD?     @relation(fields: [dfdId], references: [id])
-  etp                   ETP?     @relation(fields: [etpId], references: [id])
-  approvedBy            User?    @relation(fields: [approvedById], references: [id])
-  createdBy             User     @relation(fields: [createdById], references: [id])
+  dfd                   DFD?     @relation("TermoReferenciaDFD", fields: [dfdId], references: [id])
+  etp                   ETP?     @relation("TermoReferenciaETP", fields: [etpId], references: [id])
+  approvedBy            User?    @relation("TermoReferenciaApprovedBy", fields: [approvedById], references: [id])
+  createdBy             User     @relation("TermoReferenciaCreatedBy", fields: [createdById], references: [id])
 
   @@index([tenantId])
   @@index([status])
@@ -922,7 +966,7 @@ model Ata {
   deletedAt             DateTime?
 
   tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  bidding               Bidding  @relation(fields: [biddingId], references: [id])
+  bidding               Bidding  @relation("AtaBidding", fields: [biddingId], references: [id])
   items                 AtaItem[]
 
   @@index([tenantId])
@@ -932,6 +976,7 @@ model Ata {
 
 model AtaItem {
   id            String   @id @default(uuid())
+  tenantId      String
   ataId         String
   itemId        String
   supplierId    String
@@ -942,10 +987,12 @@ model AtaItem {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  tenant        Tenant   @relation("TenantAtaItems", fields: [tenantId], references: [id], onDelete: Cascade)
   ata           Ata      @relation(fields: [ataId], references: [id], onDelete: Cascade)
-  item          Item     @relation(fields: [itemId], references: [id])
-  supplier      Supplier @relation(fields: [supplierId], references: [id])
+  item          Item     @relation("AtaItemItem", fields: [itemId], references: [id])
+  supplier      Supplier @relation("AtaItemSupplier", fields: [supplierId], references: [id])
 
+  @@index([tenantId])
   @@index([ataId])
   @@index([supplierId])
   @@map("ata_items")
@@ -953,8 +1000,10 @@ model AtaItem {
 
 model PurchaseOrderItem {
   id                  String   @id @default(uuid())
+  tenantId            String
   purchaseOrderId     String
   itemId              String
+  contractId          String?
   description         String
   quantity            Decimal  @db.Decimal(15, 3)
   unit                String   @db.VarChar(20)
@@ -965,9 +1014,13 @@ model PurchaseOrderItem {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  purchaseOrder       PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  item                Item          @relation(fields: [itemId], references: [id])
+  tenant              Tenant   @relation("TenantPurchaseOrderItems", fields: [tenantId], references: [id], onDelete: Cascade)
+  purchaseOrder       PurchaseOrder @relation("PurchaseOrderItemPurchaseOrder", fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  item                Item          @relation("PurchaseOrderItemItem", fields: [itemId], references: [id])
+  contract            Contract?     @relation("ContractPurchaseOrderItems", fields: [contractId], references: [id])
 
+  @@index([tenantId])
   @@index([purchaseOrderId])
+  @@index([contractId])
   @@map("purchase_order_items")
 }

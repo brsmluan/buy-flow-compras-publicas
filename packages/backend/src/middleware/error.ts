@@ -5,7 +5,7 @@
 import type { FastifyError, FastifyRequest, FastifyReply } from 'fastify';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
-import { env } from '../config/index.js';
+import { env } from '../config/index';
 
 export class AppError extends Error {
   constructor(

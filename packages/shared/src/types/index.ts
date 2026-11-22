@@ -102,7 +102,7 @@ export const UserSchema = z.object({
 });
 export type User = z.infer<typeof UserSchema>;
 
-export const CreateUserSchema = UserSchema.omit({
+export const CreateUserBaseSchema = UserSchema.omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -112,13 +112,15 @@ export const CreateUserSchema = UserSchema.omit({
 }).extend({
   password: z.string().min(8).max(128),
   confirmPassword: z.string(),
-}).refine(data => data.password === data.confirmPassword, {
+});
+
+export const CreateUserSchema = CreateUserBaseSchema.refine(data => data.password === data.confirmPassword, {
   message: 'Senhas não conferem',
   path: ['confirmPassword'],
 });
 export type CreateUser = z.infer<typeof CreateUserSchema>;
 
-export const UpdateUserSchema = CreateUserSchema.omit({ password: true, confirmPassword: true }).partial();
+export const UpdateUserSchema = CreateUserBaseSchema.omit({ password: true, confirmPassword: true }).partial();
 export type UpdateUser = z.infer<typeof UpdateUserSchema>;
 
 export const LoginSchema = z.object({
@@ -486,13 +488,16 @@ export const ItemSchema = z.object({
 });
 export type Item = z.infer<typeof ItemSchema>;
 
+export const OrganTypeSchema = z.enum(['secretaria', 'fundo', 'autarquia', 'fundacao', 'camara', 'gabinete', 'outro']);
+export type OrganType = z.infer<typeof OrganTypeSchema>;
+
 export const OrganSchema = z.object({
   id: UUIDSchema,
   tenantId: UUIDSchema,
   code: z.string().max(20).optional(),
   name: z.string().min(2).max(200),
   acronym: z.string().max(10).optional(),
-  type: z.enum(['secretaria', 'fundo', 'autarquia', 'fundacao', 'camara', 'gabinete', 'outro']),
+  type: OrganTypeSchema,
   parentId: UUIDSchema.nullable(),
   budgetCode: z.string().max(50).optional(),
   managerId: UUIDSchema.optional(),
@@ -711,31 +716,6 @@ export const AtaItemSchema = z.object({
   updatedAt: DateTimeSchema,
 });
 export type AtaItem = z.infer<typeof AtaItemSchema>;
-
-// =============================================================================
-// TERMO DE REFERÊNCIA
-// =============================================================================
-
-export const TermoReferenciaSchema = z.object({
-  id: UUIDSchema,
-  tenantId: UUIDSchema,
-  dfdId: UUIDSchema.nullable(),
-  etpId: UUIDSchema.nullable(),
-  title: z.string().min(5).max(200),
-  objectDescription: z.string().min(20).max(10000),
-  specifications: z.string().max(20000).optional(),
-  quantities: z.record(z.unknown()).default({}),
-  estimatedValue: CurrencySchema,
-  deliveryConditions: z.string().max(5000).optional(),
-  status: TermoReferenciaStatusSchema.default('draft'),
-  approvedAt: DateTimeSchema.optional(),
-  approvedById: UUIDSchema.nullable(),
-  createdById: UUIDSchema,
-  createdAt: DateTimeSchema,
-  updatedAt: DateTimeSchema,
-  deletedAt: DateTimeSchema.optional(),
-});
-export type TermoReferencia = z.infer<typeof TermoReferenciaSchema>;
 
 // =============================================================================
 // PEDIDO DE COMPRA

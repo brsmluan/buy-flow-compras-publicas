@@ -73,9 +73,12 @@ export function DispensasPage() {
       if (search) params.append('search', search);
 
       const response = await apiGetPaginated<any>(`/cotar/dispensas?${params.toString()}`);
-      setDispensas(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setDispensas(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Dispensas');
     } finally {
@@ -132,7 +135,8 @@ export function DispensasPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dispensas de Licitação</h1>
-          <p className="text-muted-foreground mt-1">Dispensa de licitação por valor, emergência, etc.</        </div>
+          <p className="text-muted-foreground mt-1">Dispensa de licitação por valor, emergência, etc.</p>
+        </div>
         <Button onClick={() => navigate('/cotar/dispensas/new')} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           Nova Dispensa
@@ -297,6 +301,3 @@ export function DispensasPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';

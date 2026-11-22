@@ -14,7 +14,7 @@ import { LoadingSpinner, PageLoader } from '../../components/ui/LoadingSpinner';
 import { toast } from 'react-hot-toast';
 import { Gavel, Plus, Search, Filter, ChevronDown, ChevronUp, Edit, Trash2, Eye, MoreHorizontal, CheckCircle2, XCircle, Clock, FileText, Send, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatDate, formatCurrency, formatRelativeTime } from '../../lib/utils';
-import { BiddingModality, BiddingStatus } from '@buy-flow/shared/types/index.js';
+import { BiddingModality, BiddingStatus } from '@buy-flow/shared/index.js';
 
 interface Licitacao {
   id: string;
@@ -37,7 +37,7 @@ interface Licitacao {
   _count: { contracts: number };
 }
 
-const modalityLabels: Record<BiddingModality, string> = {
+const modalityLabels: Record<string, string> = {
   pregao_eletronico: 'Pregão Eletrônico',
   pregao_presencial: 'Pregão Presencial',
   concorrencia: 'Concorrência',
@@ -50,7 +50,7 @@ const modalityLabels: Record<BiddingModality, string> = {
   rdc: 'RDC',
 };
 
-const modalityColors: Record<BiddingModality, 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'outline'> = {
+const modalityColors: Record<string, 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'outline'> = {
   pregao_eletronico: 'default',
   pregao_presencial: 'secondary',
   concorrencia: 'warning',
@@ -121,9 +121,12 @@ export function LicitacoesPage() {
       if (statusFilter) params.append('status', statusFilter);
 
       const response = await apiGetPaginated<any>(`/cotar/licitacoes?${params.toString()}`);
-      setLicitacoes(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setLicitacoes(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Licitações');
     } finally {
@@ -181,7 +184,8 @@ export function LicitacoesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Licitações</h1>
-          <p className="text-muted-foreground mt-1">Modalidades de licitação - Pregão, Concorrência, etc.</        </div>
+          <p className="text-muted-foreground mt-1">Modalidades de licitação - Pregão, Concorrência, etc.</p>
+        </div>
         <Button onClick={() => navigate('/cotar/licitacoes/new')} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           Nova Licitação
@@ -346,7 +350,7 @@ export function LicitacoesPage() {
                               <Clock className="w-4 h-4" />
                               Abrir Sessão
                             </button>
-                          )}
+                          ) : null}
                           {licitacao.status === 'judgment' && (
                             <button
                               className="w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2"
@@ -419,6 +423,3 @@ export function LicitacoesPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, Gavel, Globe, FileText, ChevronLeft, ChevronRight } from 'lucide-react';

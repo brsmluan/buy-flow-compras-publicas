@@ -63,9 +63,12 @@ export function ItensPage() {
       if (statusFilter) params.append('isActive', statusFilter);
 
       const response = await apiGetPaginated<any>(`/cadastros/itens?${params.toString()}`);
-      setItens(response.data);
-      setTotal(response.meta.total);
-      setTotalPages(response.meta.totalPages);
+      const paginatedData = response.data;
+      if (paginatedData) {
+        setItens(paginatedData.data);
+        setTotal(paginatedData.meta.total);
+        setTotalPages(paginatedData.meta.totalPages);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.error?.message || 'Erro ao carregar Itens');
     } finally {
@@ -217,14 +220,12 @@ export function ItensPage() {
                                 <XCircle className="w-4 h-4" />
                                 Desativar
                               </>
-                            </>
-                            : (
+                            ) : (
                               <>
                                 <CheckCircle2 className="w-4 h-4" />
                                 Ativar
                               </>
-                            </>
-                          )}
+                            )}
                           </button>
                           <button
                             className="w-full px-3 py-2 text-left text-sm hover:bg-accent flex items-center gap-2 text-destructive"
@@ -280,6 +281,3 @@ export function ItensPage() {
     </div>
   );
 }
-
-import { apiPost, apiDelete } from '../../lib/api';
-import { ChevronUp, ChevronDown, Eye, Edit, Trash2, MoreHorizontal, Search, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';

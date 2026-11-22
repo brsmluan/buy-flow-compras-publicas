@@ -13,6 +13,7 @@ import {
   CreateTenantSchema,
   UpdateTenantSchema,
   UserSchema,
+  CreateUserBaseSchema,
   CreateUserSchema,
   UpdateUserSchema,
   LoginSchema,
@@ -30,6 +31,8 @@ import {
   OrganSchema,
   AuditLogSchema,
   PaginationSchema,
+  type Login,
+  type CreateUser,
 } from '../types/index.js';
 
 import { UPLOAD_CONFIG } from '../constants/index.js';
@@ -455,10 +458,13 @@ export type CreateOrgan = z.infer<typeof CreateOrganSchema>;
 /**
  * Usuário - Criação por Admin
  */
-export const CreateUserByAdminSchema = CreateUserSchema.extend({
+export const CreateUserByAdminSchema = CreateUserBaseSchema.extend({
   tenantId: UUIDSchema.nullable(),
   role: z.enum(['tenant_admin', 'tenant_manager', 'tenant_operator', 'tenant_viewer', 'supplier']),
   sendInvitationEmail: z.boolean().default(true),
+}).refine(data => data.password === data.confirmPassword, {
+  message: 'Senhas não conferem',
+  path: ['confirmPassword'],
 });
 export type CreateUserByAdmin = z.infer<typeof CreateUserByAdminSchema>;
 
@@ -605,12 +611,27 @@ export const SanitizedStringSchema = (maxLength: number = 1000) =>
 /**
  * Schema para validação de arquivos de upload
  */
+const ALLOWED_MIME_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'text/csv',
+  'application/zip',
+  'application/x-rar-compressed',
+] as const;
+
 export const UploadFileSchema = z.object({
   fieldname: z.string(),
   originalname: z.string(),
   encoding: z.string(),
   mimetype: z.string().refine(
-    (type) => UPLOAD_CONFIG.ALLOWED_MIME_TYPES.includes(type),
+    (type: string) => ALLOWED_MIME_TYPES.includes(type as typeof ALLOWED_MIME_TYPES[number]),
     { message: 'Tipo de arquivo não permitido' }
   ),
   size: z.number().max(UPLOAD_CONFIG.MAX_FILE_SIZE, { message: 'Arquivo muito grande (máx. 50MB)' }),
@@ -742,7 +763,7 @@ export type ManageAtaItems = z.infer<typeof ManageAtaItemsSchema>;
 // PEDIDO DE COMPRA
 // =============================================================================
 
-export const CreatePurchaseOrderSchema = z.object({
+export const CreatePurchaseOrderWithItemsSchema = z.object({
   contractId: UUIDSchema.optional(),
   supplierId: UUIDSchema,
   requestingOrganId: UUIDSchema,
@@ -759,7 +780,7 @@ export const CreatePurchaseOrderSchema = z.object({
   deliveryAddress: z.string().max(500).optional(),
   notes: z.string().max(2000).optional(),
 });
-export type CreatePurchaseOrder = z.infer<typeof CreatePurchaseOrderSchema>;
+export type CreatePurchaseOrderWithItems = z.infer<typeof CreatePurchaseOrderWithItemsSchema>;
 
 export const UpdatePurchaseOrderSchema = z.object({
   items: z.array(z.object({
@@ -808,3 +829,6 @@ export const PaySchema = z.object({
   paymentProofUrl: z.string().url().optional(),
 });
 export type Pay = z.infer<typeof PaySchema>;
+
+// Re-export commonly used types and schemas from types
+export { LoginSchema, type Login, CreateUserSchema, type CreateUser } from '../types/index.js';

@@ -23,7 +23,7 @@
       "@buy-flow/frontend/*": ["packages/frontend/src/*"]
     },
     "typeRoots": ["./node_modules/@types", "./packages/shared/src/types/global"],
-    "types": ["node", "vitest/globals"]
+    "types": ["node"]
   },
   "exclude": ["node_modules", "dist", "build", ".turbo", "**/*.test.ts", "**/*.spec.ts", "**/*.stories.tsx"]
 }

@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { api } from '../lib/api';
-import type { User, Login } from '@buy-flow/shared/types/index.js';
+import type { User, Login } from '@buy-flow/shared/index.js';
 
 interface AuthState {
   user: User | null;

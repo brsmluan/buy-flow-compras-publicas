@@ -6,8 +6,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ResetPasswordSchema, type ResetPassword } from '@buy-flow/shared/validators/index.js';
-import { useAuth } from '../../../contexts/AuthContext';
+import { ResetPasswordSchema, type ResetPassword } from '@buy-flow/shared/index.js';
+import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
@@ -158,7 +158,7 @@ export function ResetPasswordPage() {
                   )}
                 </div>
 
-                <input type="hidden" {...register('token')} value={token} />
+                <input type="hidden" {...register('token')} value={token || ''} />
 
                 <Button
                   type="submit"
@@ -201,4 +201,3 @@ export function ResetPasswordPage() {
 }
 
 import { apiPost } from '../../lib/api';
-import { EyeOff } from 'lucide-react';

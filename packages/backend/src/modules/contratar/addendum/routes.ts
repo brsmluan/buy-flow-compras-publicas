@@ -4,13 +4,13 @@
 
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '../../../lib/prisma.js';
-import { AppError } from '../../../middleware/error.js';
-import { authorize, requirePermission, requireTenantAccess } from '../../../middleware/auth.js';
+import { prisma } from '@/lib/prisma';
+import { AppError } from '@/middleware/error';
+import { authorize, requirePermission, requireTenantAccess } from '@/middleware/auth';
 import {
   UuidParamSchema,
   ListQuerySchema,
-} from '@buy-flow/shared/validators/index.js';
+} from '@buy-flow/shared/validators/index';
 
 const AddendumTypeSchema = z.enum([
   'aditivo', 'apostilamento', 'reajuste', 'repactuacao', 'prorrogacao', 'alteracao_objeto'
@@ -135,7 +135,7 @@ export async function addendumRoutes(app: FastifyInstance) {
     const aditivo = await prisma.contractAddendum.findFirst({ where: { id, contract: { tenantId }, deletedAt: null } });
     if (!aditivo) throw AppError.notFound('ADITIVO_NOT_FOUND', 'Aditivo não encontrado');
 
-    const updated = await prisma.contractAddendum.update({
+    const statusUpdated = await prisma.contractAddendum.update({
       where: { id },
       data: { status: 'approved' },
     });
@@ -150,12 +150,12 @@ export async function addendumRoutes(app: FastifyInstance) {
       });
     }
 
-    const updated = await prisma.contractAddendum.update({
+    const approved = await prisma.contractAddendum.update({
       where: { id },
       data: { status: 'approved', approvedAt: new Date(), approvedBy: request.user!.sub },
     });
 
-    return { success: true, data: { aditivo: updated } };
+    return { success: true, data: { aditivo: approved } };
   });
 
   app.post('/:id/sign', { preHandler: [authorize('tenant_admin', 'tenant_manager'), requirePermission('aditivo:sign')] }, async (request, reply) => {
@@ -166,7 +166,7 @@ export async function addendumRoutes(app: FastifyInstance) {
     const aditivo = await prisma.contractAddendum.findFirst({ where: { id, contract: { tenantId }, deletedAt: null } });
     if (!aditivo) throw AppError.notFound('ADITIVO_NOT_FOUND', 'Aditivo não encontrado');
 
-    const updated = await prisma.contractAddendum.update({
+    const signed = await prisma.contractAddendum.update({
       where: { id },
       data: { status: 'signed', fileUrl, signedAt: new Date(), signedBy: request.user!.sub },
     });
@@ -179,7 +179,7 @@ export async function addendumRoutes(app: FastifyInstance) {
       },
     });
 
-    return { success: true, data: { aditivo: updated } };
+    return { success: true, data: { aditivo: signed } };
   });
 
   app.delete('/:id', { preHandler: [authorize('tenant_admin'), requirePermission('aditivo:delete')] }, async (request, reply) => {
