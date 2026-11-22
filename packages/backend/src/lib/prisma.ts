@@ -18,9 +18,42 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
 
 if (env.isDev) globalForPrisma.prisma = prisma;
 
-// Middleware para soft delete automático
+// Modelos que suportam soft delete (têm campo deletedAt)
+const SOFT_DELETE_MODELS = [
+  'User',
+  'Tenant',
+  'DFD',
+  'ETP',
+  'RiskAnalysis',
+  'Bidding',
+  'Dispensa',
+  'Inexigibilidade',
+  'Credenciamento',
+  'ChamadaPublica',
+  'Contract',
+  'ContractAddendum',
+  'PurchaseOrder',
+  'Supplier',
+  'ItemCategory',
+  'Item',
+  'Organ',
+  'Report',
+  'SystemConfig',
+  'TenantInvitation',
+  'EmailLog',
+  'AuditLog',
+];
+
+// Middleware para soft delete automático (apenas modelos com deletedAt)
 prisma.$use(async (params, next) => {
-  // Soft delete para models com deletedAt
+  const model = params.model;
+
+  // Verifica se o modelo suporta soft delete
+  if (!model || !SOFT_DELETE_MODELS.includes(model)) {
+    return next(params);
+  }
+
+  // Soft delete para delete
   if (params.action === 'delete') {
     params.action = 'update';
     params.args['data'] = { deletedAt: new Date() };

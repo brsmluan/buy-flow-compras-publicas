@@ -805,3 +805,169 @@ model EmailLog {
   @@index([createdAt])
   @@map("email_logs")
 }
+
+model Upload {
+  id            String   @id @default(uuid())
+  tenantId      String
+  fileName      String   @db.VarChar(255)
+  storedName    String   @db.VarChar(255)
+  mimeType      String   @db.VarChar(100)
+  size          Int
+  path          String   @db.VarChar(500)
+  uploadedById  String
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([uploadedById])
+  @@map("uploads")
+}
+
+model Cotacao {
+  id              String   @id @default(uuid())
+  tenantId        String
+  description     String   @db.Text
+  deadline        DateTime
+  requestedById   String
+  status          String   @default("draft")
+  sentAt          DateTime?
+  receivedAt      DateTime?
+  comparedAt      DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  requestedBy     User     @relation(fields: [requestedById], references: [id])
+  items           CotacaoItem[]
+  proposals       CotacaoProposta[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("cotacoes")
+}
+
+model CotacaoItem {
+  id            String   @id @default(uuid())
+  cotacaoId     String
+  itemId        String
+  quantity      Decimal  @db.Decimal(15, 3)
+  specifications String? @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  cotacao       Cotacao  @relation(fields: [cotacaoId], references: [id], onDelete: Cascade)
+
+  @@index([cotacaoId])
+  @@map("cotacao_items")
+}
+
+model CotacaoProposta {
+  id            String   @id @default(uuid())
+  cotacaoId     String
+  supplierId    String
+  items         Json     @default("[]")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  cotacao       Cotacao  @relation(fields: [cotacaoId], references: [id], onDelete: Cascade)
+  supplier      Supplier @relation(fields: [supplierId], references: [id])
+
+  @@index([cotacaoId])
+  @@index([supplierId])
+  @@map("cotacao_propostas")
+}
+
+model TermoReferencia {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  dfdId                 String?
+  etpId                 String?
+  title                 String   @db.VarChar(200)
+  objectDescription     String   @db.Text
+  specifications        String?  @db.Text
+  quantities            Json     @default("[]")
+  estimatedValue        Decimal  @db.Decimal(15, 2)
+  deliveryConditions    String?  @db.Text
+  status                String   @default("draft")
+  approvedAt            DateTime?
+  approvedById          String?
+  createdById           String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  deletedAt             DateTime?
+
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  dfd                   DFD?     @relation(fields: [dfdId], references: [id])
+  etp                   ETP?     @relation(fields: [etpId], references: [id])
+  approvedBy            User?    @relation(fields: [approvedById], references: [id])
+  createdBy             User     @relation(fields: [createdById], references: [id])
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("termos_referencia")
+}
+
+model Ata {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  number                String   @db.VarChar(50)
+  year                  Int
+  biddingId             String
+  validityStart         DateTime
+  validityEnd           DateTime
+  status                String   @default("active")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  deletedAt             DateTime?
+
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bidding               Bidding  @relation(fields: [biddingId], references: [id])
+  items                 AtaItem[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("atas")
+}
+
+model AtaItem {
+  id            String   @id @default(uuid())
+  ataId         String
+  itemId        String
+  supplierId    String
+  quantity      Decimal  @db.Decimal(15, 3)
+  unit          String   @db.VarChar(20)
+  unitPrice     Decimal  @db.Decimal(15, 2)
+  totalPrice    Decimal  @db.Decimal(15, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ata           Ata      @relation(fields: [ataId], references: [id], onDelete: Cascade)
+  item          Item     @relation(fields: [itemId], references: [id])
+  supplier      Supplier @relation(fields: [supplierId], references: [id])
+
+  @@index([ataId])
+  @@index([supplierId])
+  @@map("ata_items")
+}
+
+model PurchaseOrderItem {
+  id                  String   @id @default(uuid())
+  purchaseOrderId     String
+  itemId              String
+  description         String
+  quantity            Decimal  @db.Decimal(15, 3)
+  unit                String   @db.VarChar(20)
+  unitPrice           Decimal  @db.Decimal(15, 2)
+  totalPrice          Decimal  @db.Decimal(15, 2)
+  deliveredQuantity   Decimal  @default(0) @db.Decimal(15, 3)
+  invoicedQuantity    Decimal  @default(0) @db.Decimal(15, 3)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  purchaseOrder       PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  item                Item          @relation(fields: [itemId], references: [id])
+
+  @@index([purchaseOrderId])
+  @@map("purchase_order_items")
+}

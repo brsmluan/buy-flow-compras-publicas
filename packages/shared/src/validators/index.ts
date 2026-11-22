@@ -34,6 +34,9 @@ import {
 
 import { UPLOAD_CONFIG } from '../constants/index.js';
 
+// Add missing type imports
+import type { Cotacao, CotacaoItem, CotacaoProposta, TermoReferencia, Ata, AtaItem, PurchaseOrderItem } from '../types/index.js';
+
 // -----------------------------------------------------------------------------
 // VALIDADORES BRASILEIROS (CPF, CNPJ, CEP, TELEFONE)
 // -----------------------------------------------------------------------------
@@ -615,3 +618,193 @@ export const UploadFileSchema = z.object({
   path: z.string().optional(),
 });
 export type UploadFile = z.infer<typeof UploadFileSchema>;
+
+// =============================================================================
+// VALIDADORES PARA NOVOS MÓDULOS
+// =============================================================================
+
+// =============================================================================
+// COTAÇÃO
+// =============================================================================
+
+export const CreateCotacaoSchema = z.object({
+  description: z.string().min(10).max(5000),
+  deadline: DateTimeSchema,
+  items: z.array(z.object({
+    itemId: UUIDSchema,
+    quantity: z.number().positive().multipleOf(0.001),
+    specifications: z.string().optional(),
+  })).min(1),
+  supplierIds: z.array(UUIDSchema).optional(),
+});
+export type CreateCotacao = z.infer<typeof CreateCotacaoSchema>;
+
+export const UpdateCotacaoSchema = CreateCotacaoSchema.partial();
+export type UpdateCotacao = z.infer<typeof UpdateCotacaoSchema>;
+
+export const CotacaoSendSchema = z.object({
+  supplierIds: z.array(UUIDSchema).min(1),
+});
+export type CotacaoSend = z.infer<typeof CotacaoSendSchema>;
+
+export const CotacaoReceiveSchema = z.object({
+  proposals: z.array(z.object({
+    supplierId: UUIDSchema,
+    items: z.array(z.object({
+      itemId: UUIDSchema,
+      unitPrice: CurrencySchema,
+      deliveryTime: z.number().int().positive().optional(),
+      conditions: z.string().optional(),
+    })).min(1),
+  })).min(1),
+});
+export type CotacaoReceive = z.infer<typeof CotacaoReceiveSchema>;
+
+export const CotacaoCompareSchema = z.object({
+  cotacaoId: UUIDSchema,
+});
+export type CotacaoCompare = z.infer<typeof CotacaoCompareSchema>;
+
+// =============================================================================
+// TERMO DE REFERÊNCIA
+// =============================================================================
+
+export const CreateTermoReferenciaSchema = z.object({
+  dfdId: UUIDSchema.optional(),
+  etpId: UUIDSchema.optional(),
+  title: z.string().min(5).max(200),
+  objectDescription: z.string().min(20).max(10000),
+  specifications: z.string().max(20000).optional(),
+  quantities: z.array(z.object({
+    itemId: UUIDSchema,
+    quantity: z.number().positive(),
+    unit: z.string(),
+  })).min(1),
+  estimatedValue: CurrencySchema,
+  deliveryConditions: z.string().max(5000).optional(),
+});
+export type CreateTermoReferencia = z.infer<typeof CreateTermoReferenciaSchema>;
+
+export const UpdateTermoReferenciaSchema = CreateTermoReferenciaSchema.partial();
+export type UpdateTermoReferencia = z.infer<typeof UpdateTermoReferenciaSchema>;
+
+// =============================================================================
+// ATA DE REGISTRO DE PREÇOS
+// =============================================================================
+
+export const CreateAtaSchema = z.object({
+  number: z.string().max(50),
+  year: z.number().int().min(2020).max(2099),
+  biddingId: UUIDSchema,
+  validityStart: DateSchema,
+  validityEnd: DateSchema,
+  items: z.array(z.object({
+    itemId: UUIDSchema,
+    supplierId: UUIDSchema,
+    quantity: z.number().positive().multipleOf(0.001),
+    unit: z.string(),
+    unitPrice: CurrencySchema,
+    totalPrice: CurrencySchema,
+  })).min(1),
+});
+export type CreateAta = z.infer<typeof CreateAtaSchema>;
+
+export const UpdateAtaSchema = z.object({
+  validityStart: DateSchema.optional(),
+  validityEnd: DateSchema.optional(),
+  items: z.array(z.object({
+    id: UUIDSchema.optional(),
+    itemId: UUIDSchema.optional(),
+    supplierId: UUIDSchema.optional(),
+    quantity: z.number().positive().multipleOf(0.001).optional(),
+    unit: z.string().optional(),
+    unitPrice: CurrencySchema.optional(),
+    totalPrice: CurrencySchema.optional(),
+  })).optional(),
+});
+export type UpdateAta = z.infer<typeof UpdateAtaSchema>;
+
+export const ManageAtaItemsSchema = z.object({
+  action: z.enum(['add', 'remove', 'update']),
+  items: z.array(z.object({
+    id: UUIDSchema.optional(),
+    itemId: UUIDSchema,
+    supplierId: UUIDSchema,
+    quantity: z.number().positive().multipleOf(0.001),
+    unit: z.string(),
+    unitPrice: CurrencySchema,
+    totalPrice: CurrencySchema,
+  })).min(1),
+});
+export type ManageAtaItems = z.infer<typeof ManageAtaItemsSchema>;
+
+// =============================================================================
+// PEDIDO DE COMPRA
+// =============================================================================
+
+export const CreatePurchaseOrderSchema = z.object({
+  contractId: UUIDSchema.optional(),
+  supplierId: UUIDSchema,
+  requestingOrganId: UUIDSchema,
+  items: z.array(z.object({
+    itemId: UUIDSchema,
+    description: z.string(),
+    quantity: z.number().positive().multipleOf(0.001),
+    unit: z.string(),
+    unitPrice: CurrencySchema,
+    totalPrice: CurrencySchema,
+  })).min(1),
+  totalValue: CurrencySchema,
+  deliveryDeadline: DateSchema.optional(),
+  deliveryAddress: z.string().max(500).optional(),
+  notes: z.string().max(2000).optional(),
+});
+export type CreatePurchaseOrder = z.infer<typeof CreatePurchaseOrderSchema>;
+
+export const UpdatePurchaseOrderSchema = z.object({
+  items: z.array(z.object({
+    itemId: UUIDSchema,
+    description: z.string(),
+    quantity: z.number().positive().multipleOf(0.001),
+    unit: z.string(),
+    unitPrice: CurrencySchema,
+    totalPrice: CurrencySchema,
+  })).optional(),
+  totalValue: CurrencySchema.optional(),
+  deliveryDeadline: DateSchema.optional(),
+  deliveryAddress: z.string().max(500).optional(),
+  notes: z.string().max(2000).optional(),
+});
+export type UpdatePurchaseOrder = z.infer<typeof UpdatePurchaseOrderSchema>;
+
+export const EmpenharSchema = z.object({
+  empenhoNumber: z.string().max(50),
+  empenhoDate: DateSchema,
+});
+export type Empenhar = z.infer<typeof EmpenharSchema>;
+
+export const ReceiveSchema = z.object({
+  deliveries: z.array(z.object({
+    itemId: UUIDSchema,
+    quantity: z.number().positive().multipleOf(0.001),
+    notes: z.string().optional(),
+  })).min(1),
+});
+export type Receive = z.infer<typeof ReceiveSchema>;
+
+export const InvoiceSchema = z.object({
+  invoices: z.array(z.object({
+    itemId: UUIDSchema,
+    quantity: z.number().positive().multipleOf(0.001),
+    invoiceNumber: z.string().max(50),
+    invoiceDate: DateSchema,
+    invoiceValue: CurrencySchema,
+    invoiceFileUrl: z.string().url().optional(),
+  })).min(1),
+});
+export type Invoice = z.infer<typeof InvoiceSchema>;
+
+export const PaySchema = z.object({
+  paymentProofUrl: z.string().url().optional(),
+});
+export type Pay = z.infer<typeof PaySchema>;

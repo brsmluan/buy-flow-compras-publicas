@@ -192,23 +192,34 @@ export function userRateLimit(maxRequests: number = 60, windowMs: number = 60000
     if (!request.user) return;
 
     const key = `ratelimit:user:${request.user.sub}`;
-    const client = await cache.get<{ count: number; resetAt: number }>(key);
-
     const now = Date.now();
+    const windowSec = Math.ceil(windowMs / 1000);
 
-    if (!client || now > client.resetAt) {
-      await cache.set(key, { count: 1, resetAt: now + windowMs }, Math.ceil(windowMs / 1000));
-      return;
+    // Usar operação atômica Redis via Lua script para evitar race condition
+    const redis = await getRedisClient();
+    const current = await redis.multi()
+      .incr(key)
+      .ttl(key)
+      .exec();
+
+    const count = current[0] as number;
+    const ttl = current[1] as number;
+
+    if (ttl === -1) {
+      // Primeira requisição ou expirou, definir TTL
+      await redis.expire(key, windowSec);
     }
 
-    if (client.count >= maxRequests) {
+    if (count > maxRequests) {
       return reply.code(429).send({
         success: false,
         error: { code: 'RATE_LIMITED', message: 'Muitas requisições, tente novamente mais tarde' },
       });
     }
-
-    client.count++;
-    await cache.set(key, client, Math.ceil((client.resetAt - now) / 1000));
   };
+}
+
+async function getRedisClient() {
+  const { getRedisClient: getClient } = await import('../lib/redis.js');
+  return getClient();
 }

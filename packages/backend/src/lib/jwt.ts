@@ -7,7 +7,7 @@ import { env } from '../config/index.js';
 import type { TokenPayload } from '@buy-flow/shared/types/index.js';
 
 const JWT_SECRET = new TextEncoder().encode(env.JWT_SECRET);
-const JWT_REFRESH_SECRET = new TextEncoder().encode(env.JWT_SECRET + '-refresh');
+const JWT_REFRESH_SECRET = new TextEncoder().encode(env.JWT_REFRESH_SECRET || env.JWT_SECRET + '-refresh-v2');
 
 interface JWTCustomPayload extends JWTPayload {
   sub: string;

@@ -597,3 +597,162 @@ export const ApiResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
     meta: z.record(z.unknown()).optional(),
   });
 export type ApiResponse<T> = z.infer<ReturnType<typeof ApiResponseSchema<z.ZodTypeAny>>> & { data?: T };
+
+// =============================================================================
+// NOVOS TIPOS PARA MÓDULOS ADICIONAIS
+// =============================================================================
+
+// =============================================================================
+// COTAÇÃO
+// =============================================================================
+
+export const CotacaoStatusSchema = z.enum([
+  'draft', 'sent', 'received', 'compared', 'cancelled',
+]);
+export type CotacaoStatus = z.infer<typeof CotacaoStatusSchema>;
+
+export const CotacaoSchema = z.object({
+  id: UUIDSchema,
+  tenantId: UUIDSchema,
+  description: z.string(),
+  deadline: DateTimeSchema,
+  requestedById: UUIDSchema,
+  status: CotacaoStatusSchema.default('draft'),
+  sentAt: DateTimeSchema.optional(),
+  receivedAt: DateTimeSchema.optional(),
+  comparedAt: DateTimeSchema.optional(),
+  cancelledAt: DateTimeSchema.optional(),
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema,
+  deletedAt: DateTimeSchema.optional(),
+});
+export type Cotacao = z.infer<typeof CotacaoSchema>;
+
+export const CotacaoItemSchema = z.object({
+  id: UUIDSchema,
+  cotacaoId: UUIDSchema,
+  itemId: UUIDSchema,
+  quantity: z.number().positive().multipleOf(0.001),
+  specifications: z.string().optional(),
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema,
+});
+export type CotacaoItem = z.infer<typeof CotacaoItemSchema>;
+
+export const CotacaoPropostaSchema = z.object({
+  id: UUIDSchema,
+  cotacaoId: UUIDSchema,
+  supplierId: UUIDSchema,
+  items: z.record(z.unknown()).default({}),
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema,
+});
+export type CotacaoProposta = z.infer<typeof CotacaoPropostaSchema>;
+
+// =============================================================================
+// TERMO DE REFERÊNCIA
+// =============================================================================
+
+export const TermoReferenciaStatusSchema = z.enum([
+  'draft', 'review', 'approved', 'rejected',
+]);
+export type TermoReferenciaStatus = z.infer<typeof TermoReferenciaStatusSchema>;
+
+export const TermoReferenciaSchema = z.object({
+  id: UUIDSchema,
+  tenantId: UUIDSchema,
+  dfdId: UUIDSchema.nullable(),
+  etpId: UUIDSchema.nullable(),
+  title: z.string().min(5).max(200),
+  objectDescription: z.string().min(20).max(10000),
+  specifications: z.string().max(20000).optional(),
+  quantities: z.record(z.unknown()).default({}),
+  estimatedValue: CurrencySchema,
+  deliveryConditions: z.string().max(5000).optional(),
+  status: TermoReferenciaStatusSchema.default('draft'),
+  approvedAt: DateTimeSchema.optional(),
+  approvedById: UUIDSchema.nullable(),
+  createdById: UUIDSchema,
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema,
+  deletedAt: DateTimeSchema.optional(),
+});
+export type TermoReferencia = z.infer<typeof TermoReferenciaSchema>;
+
+// =============================================================================
+// ATA DE REGISTRO DE PREÇOS
+// =============================================================================
+
+export const AtaSchema = z.object({
+  id: UUIDSchema,
+  tenantId: UUIDSchema,
+  number: z.string().max(50),
+  year: z.number().int().min(2020).max(2099),
+  biddingId: UUIDSchema,
+  validityStart: DateTimeSchema,
+  validityEnd: DateTimeSchema,
+  status: z.string().default('active'),
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema,
+  deletedAt: DateTimeSchema.optional(),
+});
+export type Ata = z.infer<typeof AtaSchema>;
+
+export const AtaItemSchema = z.object({
+  id: UUIDSchema,
+  ataId: UUIDSchema,
+  itemId: UUIDSchema,
+  supplierId: UUIDSchema,
+  quantity: z.number().positive().multipleOf(0.001),
+  unit: z.string().max(20),
+  unitPrice: CurrencySchema,
+  totalPrice: CurrencySchema,
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema,
+});
+export type AtaItem = z.infer<typeof AtaItemSchema>;
+
+// =============================================================================
+// TERMO DE REFERÊNCIA
+// =============================================================================
+
+export const TermoReferenciaSchema = z.object({
+  id: UUIDSchema,
+  tenantId: UUIDSchema,
+  dfdId: UUIDSchema.nullable(),
+  etpId: UUIDSchema.nullable(),
+  title: z.string().min(5).max(200),
+  objectDescription: z.string().min(20).max(10000),
+  specifications: z.string().max(20000).optional(),
+  quantities: z.record(z.unknown()).default({}),
+  estimatedValue: CurrencySchema,
+  deliveryConditions: z.string().max(5000).optional(),
+  status: TermoReferenciaStatusSchema.default('draft'),
+  approvedAt: DateTimeSchema.optional(),
+  approvedById: UUIDSchema.nullable(),
+  createdById: UUIDSchema,
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema,
+  deletedAt: DateTimeSchema.optional(),
+});
+export type TermoReferencia = z.infer<typeof TermoReferenciaSchema>;
+
+// =============================================================================
+// PEDIDO DE COMPRA
+// =============================================================================
+
+export const PurchaseOrderItemSchema = z.object({
+  id: UUIDSchema,
+  purchaseOrderId: UUIDSchema,
+  itemId: UUIDSchema,
+  description: z.string(),
+  quantity: z.number().positive().multipleOf(0.001),
+  unit: z.string().max(20),
+  unitPrice: CurrencySchema,
+  totalPrice: CurrencySchema,
+  deliveredQuantity: z.number().multipleOf(0.001).default(0),
+  invoicedQuantity: z.number().multipleOf(0.001).default(0),
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema,
+});
+export type PurchaseOrderItem = z.infer<typeof PurchaseOrderItemSchema>;

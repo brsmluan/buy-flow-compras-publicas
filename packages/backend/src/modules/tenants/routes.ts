@@ -5,6 +5,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { prisma } from '../../lib/prisma.js';
 import { cache } from '../../lib/redis.js';
 import { AppError } from '../../middleware/error.js';
