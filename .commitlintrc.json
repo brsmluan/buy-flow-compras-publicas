@@ -1,0 +1,56 @@
+{
+  "extends": ["@commitlint/config-conventional"],
+  "rules": {
+    "type-enum": [
+      2,
+      "always",
+      [
+        "feat",
+        "fix",
+        "docs",
+        "style",
+        "refactor",
+        "test",
+        "chore",
+        "perf",
+        "ci",
+        "build",
+        "revert"
+      ]
+    ],
+    "type-case": [2, "always", "lower-case"],
+    "type-empty": [2, "never"],
+    "scope-case": [2, "always", "lower-case"],
+    "subject-case": [2, "always", "sentence-case"],
+    "subject-empty": [2, "never"],
+    "subject-full-stop": [2, "never", "."],
+    "header-max-length": [2, "always", 100],
+    "body-max-line-length": [2, "always", 100],
+    "footer-max-line-length": [2, "always", 100]
+  },
+  "prompt": {
+    "messages": {
+      "type": "Selecione o tipo de mudança:",
+      "scope": "Escopo (opcional):",
+      "customScope": "Escopo personalizado:",
+      "subject": "Descrição curta (imperativo):",
+      "body": "Descrição detalhada (opcional):",
+      "breaking": "Mudanças quebrando compatibilidade:",
+      "footer": "Issues relacionadas (opcional):",
+      "confirmCommit": "Confirmar commit?"
+    },
+    "types": [
+      { "value": "feat", "name": "feat:     Nova funcionalidade", "description": "Adiciona uma nova feature" },
+      { "value": "fix", "name": "fix:      Correção de bug", "description": "Corrige um bug" },
+      { "value": "docs", "name": "docs:     Documentação", "description": "Altera apenas documentação" },
+      { "value": "style", "name": "style:    Formatação", "description": "Muda formatação (espaços, vírgulas, etc)" },
+      { "value": "refactor", "name": "refactor: Refatoração", "description": "Refatora código sem mudar comportamento" },
+      { "value": "test", "name": "test:     Testes", "description": "Adiciona ou corrige testes" },
+      { "value": "chore", "name": "chore:    Manutenção", "description": "Tarefas de build, deps, configs" },
+      { "value": "perf", "name": "perf:     Performance", "description": "Melhora performance" },
+      { "value": "ci", "name": "ci:       CI/CD", "description": "Muda config de CI/CD" },
+      { "value": "build", "name": "build:    Build", "description": "Muda sistema de build/deps" },
+      { "value": "revert", "name": "revert:   Revert", "description": "Reverte commit anterior" }
+    ]
+  }
+}

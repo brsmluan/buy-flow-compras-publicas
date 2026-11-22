@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@buy-flow/shared/*": ["packages/shared/src/*"],
+      "@buy-flow/backend/*": ["packages/backend/src/*"],
+      "@buy-flow/frontend/*": ["packages/frontend/src/*"]
+    },
+    "typeRoots": ["./node_modules/@types", "./packages/shared/src/types/global"],
+    "types": ["node", "vitest/globals"]
+  },
+  "exclude": ["node_modules", "dist", "build", ".turbo", "**/*.test.ts", "**/*.spec.ts", "**/*.stories.tsx"]
+}

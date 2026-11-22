@@ -1,0 +1,807 @@
+// =============================================================================
+// BUY-FLOW - Prisma Schema (Multi-tenant PostgreSQL)
+// =============================================================================
+// Gerado com: pnpm db:generate
+// Migrações: pnpm db:migrate
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum TenantStatus {
+  active
+  inactive
+  suspended
+  trial
+  pending_setup
+}
+
+enum TenantPlan {
+  starter
+  professional
+  enterprise
+  custom
+}
+
+enum UserRole {
+  platform_owner
+  platform_admin
+  tenant_admin
+  tenant_manager
+  tenant_operator
+  tenant_viewer
+  supplier
+}
+
+enum UserStatus {
+  active
+  inactive
+  pending_approval
+  blocked
+  locked
+}
+
+enum DFDStatus {
+  draft
+  submitted
+  under_review
+  approved
+  rejected
+  returned
+  cancelled
+}
+
+enum ETPStatus {
+  draft
+  submitted
+  under_review
+  approved
+  rejected
+  returned
+}
+
+enum RiskLevel {
+  very_low
+  low
+  medium
+  high
+  very_high
+  critical
+}
+
+enum BiddingModality {
+  pregao_eletronico
+  pregao_presencial
+  concorrencia
+  concurso
+  leilao
+  dispensa
+  inexigibilidade
+  credenciamento
+  chamada_publica
+  rdc
+}
+
+enum BiddingStatus {
+  planning
+  published
+  clarification_period
+  session_scheduled
+  in_session
+  judgment
+  homologated
+  revoked
+  cancelled
+  archived
+}
+
+enum ContractStatus {
+  draft
+  pending_signature
+  active
+  suspended
+  expired
+  terminated
+  renewed
+}
+
+enum AddendumType {
+  aditivo
+  apostilamento
+  reajuste
+  repactuacao
+  prorrogacao
+  alteracao_objeto
+}
+
+enum AddendumStatus {
+  draft
+  pending_approval
+  approved
+  rejected
+  signed
+}
+
+enum PurchaseOrderStatus {
+  draft
+  pending_empemho
+  empenhado
+  partial_delivered
+  delivered
+  invoiced
+  paid
+  cancelled
+}
+
+enum SupplierType {
+  pf
+  pj
+  mei
+  foreign
+}
+
+enum SupplierStatus {
+  active
+  inactive
+  blocked
+  suspended
+  pending_habilitation
+}
+
+enum OrganType {
+  secretaria
+  fundo
+  autarquia
+  fundacao
+  camara
+  gabinete
+  outro
+}
+
+// =============================================================================
+// MODELS - MULTI-TENANCY CORE
+// =============================================================================
+
+model Tenant {
+  id            String       @id @default(uuid())
+  name          String       @db.VarChar(200)
+  slug          String       @unique @db.VarChar(100)
+  cnpj          String       @unique @db.Char(14)
+  state         String       @db.Char(2)
+  city          String       @db.VarChar(100)
+  status        TenantStatus @default(pending_setup)
+  plan          TenantPlan   @default(starter)
+  customDomain  String?      @unique @db.VarChar(255)
+  logoUrl       String?      @db.VarChar(500)
+  primaryColor  String       @default("#1e40af") @db.VarChar(7)
+  settings      Json         @default("{}")
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+
+  users         User[]
+  dfds          DFD[]
+  etps          ETP[]
+  riskAnalyses  RiskAnalysis[]
+  biddings      Bidding[]
+  contracts     Contract[]
+  purchaseOrders PurchaseOrder[]
+  suppliers     Supplier[]
+  itemCategories ItemCategory[]
+  items         Item[]
+  organs        Organ[]
+  auditLogs     AuditLog[]
+  reports       Report[]
+
+  @@index([slug])
+  @@index([cnpj])
+  @@index([status])
+  @@map("tenants")
+}
+
+model User {
+  id                String     @id @default(uuid())
+  tenantId          String?
+  email             String     @unique @db.VarChar(255)
+  passwordHash      String     @db.VarChar(255)
+  name              String     @db.VarChar(200)
+  cpf               String?    @unique @db.Char(11)
+  phone             String?    @db.VarChar(20)
+  avatarUrl         String?    @db.VarChar(500)
+  role              UserRole
+  status            UserStatus @default(pending_approval)
+  permissions       String[]   @default([])
+  lastLoginAt       DateTime?
+  passwordChangedAt DateTime?
+  twoFactorEnabled  Boolean    @default(false)
+  twoFactorSecret   String?    @db.VarChar(32)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  deletedAt         DateTime?
+
+  tenant            Tenant?    @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  dfdsRequested     DFD[]      @relation("DFDRequester")
+  dfdsApproved      DFD[]      @relation("DFDApprover")
+  biddingsResponsible Bidding[] @relation("BiddingResponsible")
+  contractsManager  Contract[] @relation("ContractManager")
+  purchaseOrdersRequester PurchaseOrder[] @relation("PORequester")
+  auditLogs         AuditLog[]
+
+  @@index([tenantId])
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+// =============================================================================
+// MODELS - PLANEJAR
+// =============================================================================
+
+model DFD {
+  id                   String      @id @default(uuid())
+  tenantId             String
+  number               String      @db.VarChar(50)
+  year                 Int
+  requestingOrganId    String
+  requesterId          String
+  objectDescription    String      @db.Text
+  justification        String      @db.Text
+  estimatedValue       Decimal     @db.Decimal(15, 2)
+  budgetSourceId       String
+  status               DFDStatus   @default(draft)
+  attachments          Json        @default("[]")
+  workflowHistory      Json        @default("[]")
+  approvedAt           DateTime?
+  approvedBy           String?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+  deletedAt            DateTime?
+
+  tenant               Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  requestingOrgan      Organ       @relation("DFDRequestingOrgan", fields: [requestingOrganId], references: [id])
+  requester            User        @relation("DFDRequester", fields: [requesterId], references: [id])
+  approver             User?       @relation("DFDApprover", fields: [approvedBy], references: [id])
+  budgetSource         Organ       @relation("DFDBudgetSource", fields: [budgetSourceId], references: [id])
+  etps                 ETP[]
+
+  @@unique([tenantId, number, year])
+  @@index([tenantId])
+  @@index([status])
+  @@index([year])
+  @@map("dfds")
+}
+
+model ETP {
+  id                   String    @id @default(uuid())
+  tenantId             String
+  dfdId                String    @unique
+  title                String    @db.VarChar(200)
+  problemDescription   String    @db.Text
+  solutionDescription  String    @db.Text
+  requirements         Json      @default("[]")
+  estimatedValue       Decimal   @db.Decimal(15, 2)
+  marketResearch       String?   @db.Text
+  risks                Json      @default("[]")
+  alternatives         Json      @default("[]")
+  status               ETPStatus @default(draft)
+  attachments          Json      @default("[]")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+
+  tenant               Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  dfd                  DFD       @relation(fields: [dfdId], references: [id], onDelete: Cascade)
+  riskAnalyses         RiskAnalysis[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("etps")
+}
+
+model RiskAnalysis {
+  id                  String      @id @default(uuid())
+  tenantId            String
+  relatedEntityId     String
+  relatedEntityType   String
+  risks               Json        @default("[]")
+  overallRiskLevel    RiskLevel
+  mitigationPlan      String?     @db.Text
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  deletedAt           DateTime?
+
+  tenant              Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  etp                 ETP?        @relation(fields: [relatedEntityId], references: [id])
+
+  @@index([tenantId])
+  @@index([relatedEntityId, relatedEntityType])
+  @@map("risk_analyses")
+}
+
+// =============================================================================
+// MODELS - COTAR (MODALIDADES)
+// =============================================================================
+
+model Bidding {
+  id                   String            @id @default(uuid())
+  tenantId             String
+  modality             BiddingModality
+  number               String            @db.VarChar(50)
+  year                 Int
+  processNumber        String?           @db.VarChar(100)
+  objectDescription    String            @db.Text
+  estimatedValue       Decimal           @db.Decimal(15, 2)
+  biddingOrganId       String
+  responsibleId        String
+  status               BiddingStatus     @default(planning)
+  editalUrl            String?           @db.VarChar(500)
+  pncpPublicationId    String?           @db.VarChar(100)
+  sessionDate          DateTime?
+  sessionLocation      String?           @db.VarChar(500)
+  items                Json              @default("[]")
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  deletedAt            DateTime?
+
+  tenant               Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  biddingOrgan         Organ             @relation("BiddingOrgan", fields: [biddingOrganId], references: [id])
+  responsible          User              @relation("BiddingResponsible", fields: [responsibleId], references: [id])
+  contracts            Contract[]
+
+  @@unique([tenantId, number, year])
+  @@index([tenantId])
+  @@index([modality])
+  @@index([status])
+  @@index([year])
+  @@map("biddings")
+}
+
+model Dispensa {
+  id                     String       @id @default(uuid())
+  tenantId               String
+  biddingId              String       @unique
+  subType                String
+  legalBasis             String       @db.VarChar(500)
+  justification          String       @db.Text
+  supplierId             String?
+  ratificationAuthorityId String
+  authorizationAuthorityId String
+  ratificationDate       DateTime?
+  authorizationDate      DateTime?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  deletedAt              DateTime?
+
+  tenant                 Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bidding                Bidding      @relation(fields: [biddingId], references: [id], onDelete: Cascade)
+  supplier               Supplier?    @relation(fields: [supplierId], references: [id])
+
+  @@index([tenantId])
+  @@map("dispensas")
+}
+
+model Inexigibilidade {
+  id                         String       @id @default(uuid())
+  tenantId                   String
+  biddingId                  String       @unique
+  subType                    String
+  legalBasis                 String       @db.VarChar(500)
+  justification              String       @db.Text
+  supplierId                 String
+  ratificationAuthorityId    String
+  authorizationAuthorityId   String
+  exclusivityProof           String       @db.Text
+  ratificationDate           DateTime?
+  authorizationDate          DateTime?
+  createdAt                  DateTime     @default(now())
+  updatedAt                  DateTime     @updatedAt
+  deletedAt                  DateTime?
+
+  tenant                     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bidding                    Bidding      @relation(fields: [biddingId], references: [id], onDelete: Cascade)
+  supplier                   Supplier     @relation(fields: [supplierId], references: [id])
+
+  @@index([tenantId])
+  @@map("inexigibilidades")
+}
+
+model Credenciamento {
+  id                   String       @id @default(uuid())
+  tenantId             String
+  biddingId            String       @unique
+  editalUrl            String?      @db.VarChar(500)
+  habilitationStart    DateTime?
+  habilitationEnd      DateTime?
+  qualifiedSuppliers   Json         @default("[]")
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  deletedAt            DateTime?
+
+  tenant               Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bidding              Bidding      @relation(fields: [biddingId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("credenciamentos")
+}
+
+model ChamadaPublica {
+  id                   String       @id @default(uuid())
+  tenantId             String
+  biddingId            String       @unique
+  editalUrl            String?      @db.VarChar(500)
+  projectDescription   String       @db.Text
+  selectionCriteria    Json         @default("[]")
+  selectedProjects     Json         @default("[]")
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  deletedAt            DateTime?
+
+  tenant               Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bidding              Bidding      @relation(fields: [biddingId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("chamadas_publicas")
+}
+
+// =============================================================================
+// MODELS - CONTRATAR
+// =============================================================================
+
+model Contract {
+  id                String         @id @default(uuid())
+  tenantId          String
+  number            String         @db.VarChar(50)
+  year              Int
+  processNumber     String?        @db.VarChar(100)
+  biddingId         String?        @unique
+  modality          BiddingModality
+  supplierId        String
+  organId           String
+  managerId         String
+  objectDescription String         @db.Text
+  totalValue        Decimal        @db.Decimal(15, 2)
+  startDate         DateTime
+  endDate           DateTime
+  status            ContractStatus @default(draft)
+  contractFileUrl   String?        @db.VarChar(500)
+  signedAt          DateTime?
+  signedBy          String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deletedAt         DateTime?
+
+  tenant            Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bidding           Bidding?       @relation(fields: [biddingId], references: [id])
+  supplier          Supplier       @relation(fields: [supplierId], references: [id])
+  organ             Organ          @relation("ContractOrgan", fields: [organId], references: [id])
+  manager           User           @relation("ContractManager", fields: [managerId], references: [id])
+  signer            User?          @relation("ContractSigner", fields: [signedBy], references: [id])
+  addenda           ContractAddendum[]
+  purchaseOrders    PurchaseOrder[]
+
+  @@unique([tenantId, number, year])
+  @@index([tenantId])
+  @@index([supplierId])
+  @@index([organId])
+  @@index([status])
+  @@index([endDate])
+  @@map("contracts")
+}
+
+model ContractAddendum {
+  id                String        @id @default(uuid())
+  contractId        String
+  number            String        @db.VarChar(50)
+  type              AddendumType
+  description       String        @db.Text
+  valueChange       Decimal       @default(0) @db.Decimal(15, 2)
+  newTotalValue     Decimal?      @db.Decimal(15, 2)
+  newEndDate        DateTime?
+  legalBasis        String        @db.VarChar(500)
+  status            AddendumStatus @default(draft)
+  fileUrl           String?       @db.VarChar(500)
+  signedAt          DateTime?
+  signedBy          String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+
+  contract          Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  signer            User?         @relation(fields: [signedBy], references: [id])
+
+  @@index([contractId])
+  @@index([status])
+  @@map("contract_addenda")
+}
+
+// =============================================================================
+// MODELS - COMPRAR
+// =============================================================================
+
+model PurchaseOrder {
+  id                   String                @id @default(uuid())
+  tenantId             String
+  number               String                @db.VarChar(50)
+  year                 Int
+  contractId           String?
+  supplierId           String
+  requestingOrganId    String
+  requesterId          String
+  items                Json                  @default("[]")
+  totalValue           Decimal               @db.Decimal(15, 2)
+  empenhoNumber        String?               @db.VarChar(50)
+  empenhoDate          DateTime?
+  status               PurchaseOrderStatus   @default(draft)
+  deliveryDeadline     DateTime?
+  deliveryAddress      String?               @db.VarChar(500)
+  notes                String?               @db.Text
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+
+  tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contract             Contract?             @relation(fields: [contractId], references: [id])
+  supplier             Supplier              @relation(fields: [supplierId], references: [id])
+  requestingOrgan      Organ                 @relation("PORequestingOrgan", fields: [requestingOrganId], references: [id])
+  requester            User                  @relation("PORequester", fields: [requesterId], references: [id])
+
+  @@unique([tenantId, number, year])
+  @@index([tenantId])
+  @@index([supplierId])
+  @@index([contractId])
+  @@index([status])
+  @@index([year])
+  @@map("purchase_orders")
+}
+
+// =============================================================================
+// MODELS - CADASTROS
+// =============================================================================
+
+model Supplier {
+  id                      String           @id @default(uuid())
+  tenantId                String
+  type                    SupplierType
+  name                    String           @db.VarChar(200)
+  tradeName               String?          @db.VarChar(200)
+  cnpjCpf                 String           @db.VarChar(14)
+  stateRegistration       String?          @db.VarChar(20)
+  municipalRegistration   String?          @db.VarChar(20)
+  email                   String?          @db.VarChar(255)
+  phone                   String?          @db.VarChar(20)
+  address                 Json?
+  categories              String[]         @default([])
+  status                  SupplierStatus   @default(active)
+  habilitationValidUntil  DateTime?
+  bankAccount             Json?
+  certifications          Json             @default("[]")
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  deletedAt               DateTime?
+
+  tenant                  Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  biddingsDispensa        Dispensa[]
+  biddingsInexigibilidade Inexigibilidade[]
+  contracts               Contract[]
+  purchaseOrders          PurchaseOrder[]
+
+  @@unique([tenantId, cnpjCpf])
+  @@index([tenantId])
+  @@index([type])
+  @@index([status])
+  @@index([name])
+  @@map("suppliers")
+}
+
+model ItemCategory {
+  id          String   @id @default(uuid())
+  tenantId    String
+  code        String   @db.VarChar(20)
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  parentId    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent      ItemCategory? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    ItemCategory[] @relation("CategoryHierarchy")
+  items       Item[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([parentId])
+  @@map("item_categories")
+}
+
+model Item {
+  id               String   @id @default(uuid())
+  tenantId         String
+  categoryId       String
+  code             String   @db.VarChar(50)
+  name             String   @db.VarChar(300)
+  description      String?  @db.Text
+  unit             String   @db.VarChar(20)
+  specifications   String?  @db.Text
+  referencePrice   Decimal? @db.Decimal(15, 2)
+  isActive         Boolean  @default(true)
+  tags             String[] @default([])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime?
+
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category         ItemCategory @relation(fields: [categoryId], references: [id])
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([categoryId])
+  @@index([isActive])
+  @@map("items")
+}
+
+model Organ {
+  id            String     @id @default(uuid())
+  tenantId      String
+  code          String?    @db.VarChar(20)
+  name          String     @db.VarChar(200)
+  acronym       String?    @db.VarChar(10)
+  type          OrganType
+  parentId      String?
+  budgetCode    String?    @db.VarChar(50)
+  managerId     String?
+  address       String?    @db.VarChar(500)
+  phone         String?    @db.VarChar(20)
+  email         String?    @db.VarChar(255)
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+
+  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent        Organ?     @relation("OrganHierarchy", fields: [parentId], references: [id])
+  children      Organ[]    @relation("OrganHierarchy")
+  manager       User?      @relation(fields: [managerId], references: [id])
+  dfdsRequested DFD[]      @relation("DFDRequestingOrgan")
+  dfdsBudget    DFD[]      @relation("DFDBudgetSource")
+  biddings      Bidding[]  @relation("BiddingOrgan")
+  contracts     Contract[] @relation("ContractOrgan")
+  purchaseOrdersPurchaseOrder[] @relation("PORequestingOrgan")
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([type])
+  @@index([parentId])
+  @@map("organs")
+}
+
+// =============================================================================
+// MODELS - AUDITORIA & RELATÓRIOS
+// =============================================================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String?
+  userId    String?
+  userName  String?
+  action    String   @db.VarChar(100)
+  resource  String   @db.VarChar(100)
+  resourceId String?
+  oldValues Json?
+  newValues Json?
+  ipAddress String?  @db.VarChar(45)
+  userAgent String?  @db.VarChar(500)
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([action])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  tenantId    String
+  type        String   @db.VarChar(50)
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  config      Json     @default("{}")
+  schedule    String?  @db.VarChar(100)
+  lastRunAt   DateTime?
+  nextRunAt   DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([type])
+  @@index([isActive])
+  @@map("reports")
+}
+
+// =============================================================================
+// MODELS - SISTEMA / CONFIGURAÇÃO
+// =============================================================================
+
+model SystemConfig {
+  id        String   @id @default(uuid())
+  tenantId  String?
+  key       String   @db.VarChar(100)
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@map("system_configs")
+}
+
+model TenantInvitation {
+  id        String   @id @default(uuid())
+  tenantId  String
+  email     String   @db.VarChar(255)
+  role      UserRole
+  token     String   @unique @db.VarChar(64)
+  expiresAt DateTime
+  acceptedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([email])
+  @@index([token])
+  @@map("tenant_invitations")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique @db.VarChar(255)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model EmailLog {
+  id        String   @id @default(uuid())
+  tenantId  String?
+  to        String   @db.VarChar(255)
+  subject   String   @db.VarChar(500)
+  body      String   @db.Text
+  status    String   @db.VarChar(50)
+  error     String?  @db.Text
+  sentAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("email_logs")
+}

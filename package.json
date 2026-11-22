@@ -1,0 +1,59 @@
+{
+  "name": "buy-flow",
+  "version": "0.0.1",
+  "private": true,
+  "description": "SaaS Multi-tenant de Compras Públicas para Prefeituras - Lei 14.133/2021",
+  "author": "Buy-Flow Team",
+  "license": "PROPRIETARY",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "build:prod": "turbo run build --filter=@buy-flow/backend --filter=@buy-flow/frontend",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md,yml,yaml}\"",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "test:coverage": "turbo run test:coverage",
+    "db:generate": "turbo run db:generate --filter=@buy-flow/backend",
+    "db:push": "turbo run db:push --filter=@buy-flow/backend",
+    "db:migrate": "turbo run db:migrate --filter=@buy-flow/backend",
+    "db:studio": "turbo run db:studio --filter=@buy-flow/backend",
+    "db:seed": "turbo run db:seed --filter=@buy-flow/backend",
+    "db:reset": "turbo run db:reset --filter=@buy-flow/backend",
+    "prepare": "husky install",
+    "commit": "git-cz",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "changeset publish",
+    "clean": "turbo run clean && rm -rf node_modules .turbo",
+    "docker:up": "docker-compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker-compose -f docker/docker-compose.yml down",
+    "docker:logs": "docker-compose -f docker/docker-compose.yml logs -f",
+    "docker:build": "docker-compose -f docker/docker-compose.yml build",
+    "storybook": "turbo run storybook --filter=@buy-flow/frontend"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.1",
+    "@commitlint/cli": "^19.0.3",
+    "@commitlint/config-conventional": "^19.0.3",
+    "@types/node": "^20.11.0",
+    "eslint": "^8.56.0",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.2.5",
+    "turbo": "^1.12.4",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.15.0"
+  },
+  "packageManager": "pnpm@8.15.4"
+}

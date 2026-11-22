@@ -1,0 +1,190 @@
+version: '3.8'
+
+services:
+  # =============================================================================
+  # POSTGRESQL - Banco de Dados Principal
+  # =============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: buy-flow-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: buy_flow
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d buy_flow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - buy-flow-network
+    restart: unless-stopped
+
+  # =============================================================================
+  # REDIS - Cache, Sessions, BullMQ Queues
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: buy-flow-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - buy-flow-network
+    restart: unless-stopped
+
+  # =============================================================================
+  # MINIO - Object Storage (S3 Compatible)
+  # =============================================================================
+  minio:
+    image: minio/minio:latest
+    container_name: buy-flow-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - buy-flow-network
+    restart: unless-stopped
+
+  # =============================================================================
+  # MAILHOG - Email Testing (Development)
+  # =============================================================================
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: buy-flow-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - buy-flow-network
+    restart: unless-stopped
+
+  # =============================================================================
+  # PGADMIN - Database Management UI
+  # =============================================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: buy-flow-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@buyflow.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./servers.json:/pgadmin4/servers.json
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - buy-flow-network
+    restart: unless-stopped
+
+  # =============================================================================
+  # BACKEND API (Development - Hot Reload)
+  # =============================================================================
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+      target: development
+    container_name: buy-flow-backend
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/buy_flow?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: "dev-secret-change-in-production-min-64-chars"
+      JWT_EXPIRES_IN: "15m"
+      JWT_REFRESH_EXPIRES_IN: "7d"
+      BCRYPT_ROUNDS: "10"
+      LOG_LEVEL: "debug"
+      LOG_PRETTY: "true"
+      PORT: "4000"
+      FRONTEND_URL: "http://localhost:3000"
+      MINIO_ENDPOINT: "minio"
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: "minioadmin"
+      MINIO_SECRET_KEY: "minioadmin"
+      MINIO_BUCKET: "buy-flow"
+      MINIO_USE_SSL: "false"
+    volumes:
+      - ../packages/backend:/app
+      - /app/node_modules
+      - ../packages/shared:/app/packages/shared
+    ports:
+      - "4000:4000"
+      - "9229:9229"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - buy-flow-network
+    restart: unless-stopped
+    command: pnpm dev
+
+  # =============================================================================
+  # FRONTEND (Development - Hot Reload)
+  # =============================================================================
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+      target: development
+    container_name: buy-flow-frontend
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:4000
+      VITE_APP_NAME: "Buy-Flow"
+      PORT: "3000"
+    volumes:
+      - ../packages/frontend:/app
+      - /app/node_modules
+      - ../packages/shared:/app/packages/shared
+    ports:
+      - "3000:3000"
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - buy-flow-network
+    restart: unless-stopped
+    command: pnpm dev --host 0.0.0.0
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  pgadmin_data:
+
+networks:
+  buy-flow-network:
+    driver: bridge
